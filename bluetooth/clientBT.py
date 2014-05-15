@@ -14,19 +14,19 @@ def main():
 	send_data = " "
 	
 	#GPIO Variables
-	GPIO.setup("P8_07", GPIO.IN)	#Hazards
-	GPIO.add_event_detect("P8_07", GPIO.BOTH)
+	GPIO.setup("P9_42", GPIO.IN)	#Hazards
+	GPIO.add_event_detect("P9_42", GPIO.BOTH)
 
 	GPIO.setup("P8_08", GPIO.IN)	#Brakes
 #	GPIO.add_event_detect("P8_08", GPIO.BOTH)
 
-	GPIO.setup("P8_09", GPIO.IN)	#Left
-	GPIO.add_event_detect("P8_09", GPIO.BOTH)
+	GPIO.setup("P8_15", GPIO.IN)	#Left
+	GPIO.add_event_detect("P8_15", GPIO.BOTH)
 
-	GPIO.setup("P8_10", GPIO.IN)	#Right
-	GPIO.add_event_detect("P8_10", GPIO.BOTH)
+	GPIO.setup("P8_14", GPIO.IN)	#Right
+	GPIO.add_event_detect("P8_14", GPIO.BOTH)
 
-	GPIO.setup("P8_11", GPIO.IN) # Accelerator
+	GPIO.setup("P8_07", GPIO.IN) # Accelerator
 
 	GPIO.setup("P9_23", GPIO.IN) # Regen
 #	GPIO.add_event_detect("P9_23", GPIO.BOTH)
@@ -53,6 +53,8 @@ def main():
 	#		sys.exit(0)
 		else:
 			break
+		# Wait and try to connect again
+		t.sleep(1)
 
 	first_match = service_matches[0]
 	port = first_match["port"]
@@ -67,25 +69,25 @@ def main():
 	while True:
 
 		#Set Hazards
-		if GPIO.event_detected("P8_07"):
+		if GPIO.event_detected("P9_42"):
 			print "Hazards Change"
-			if GPIO.input("P8_07"):
+			if GPIO.input("P9_42"):
 				data[0] = 1
 			else:
 				data[0] = 0
 		
 		#Set Right Turn Signal
-		if GPIO.event_detected("P8_09"):
+		if GPIO.event_detected("P8_15"):
                         print "Right Turn Signal"
-                        if GPIO.input("P8_09"):
+                        if GPIO.input("P8_15"):
                                 data[1] = 1
                         else:
                                 data[1] = 0
 
 		#Set Left Turn Signal
-		if GPIO.event_detected("P8_10"):
+		if GPIO.event_detected("P8_14"):
 #                        print "Left Turn Signal"
-                        if GPIO.input("P8_10"):
+                        if GPIO.input("P8_14"):
                                 data[2] = 1
                         else:
                                 data[2] = 0
@@ -98,7 +100,7 @@ def main():
                         data[3] = 0
 
 		# Set Acceleration
-		if GPIO.input("P8_11"):
+		if GPIO.input("P8_07"):
 			data[4] = data[4] + 5
 		else:
 			if data[4] > 0:
