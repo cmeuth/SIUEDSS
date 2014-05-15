@@ -11,11 +11,58 @@ def serial_comm():
 
 	global ser
 	global ser2
-	
-	print "We're in!"
-	serial_message = "312A2A3F0D".decode( "hex" )
-        ser.write( serial_message )
+	global coastFlag
+	global regenFlag
+	global accelerationFlag
+	global throttleFlag
+	global ignitionFlag
+	global directionFlag
+	global data
 
+	inst_read = [''] * 46
+	char_read = ''
+
+	print "We're in!"
+	all_inst = "1**?\r" # Gets all instrumentation
+	serial_message = "1**?\r" # Gets all instrumentation
+
+	while True:
+		if coastFlag:
+		        ser.write( serial_message )
+			coastFlag = False
+			print "Coast Command sent"
+		elif regenFlag:
+		        ser.write( serial_message )
+			regenFlag = False
+			print "Regen Command sent"
+		elif accelerationFlag:
+		        ser.write( serial_message )
+			accelerationFlag = False
+			print "New Acceleration command sent"
+		elif throttleFlag:
+		        ser.write( serial_message )
+			throttleFlag = False
+			print "Throttle command sent"
+		elif ignitionFlag:
+		        ser.write( serial_message )
+			ignitionFlag = False
+			print "Ignition command sent"
+		elif directionFlag:
+		        ser.write( serial_message )
+			directionFlag = False
+			print "Direction command sent"
+		else:
+		        ser.write( all_inst )
+			print "Instrumentation query sent"
+			i = 0
+			for i in range( 46 ):
+				inst_read[ i ] = ser.read( 1 ).encode( "hex" )
+
+			print inst_read	
+
+		t.sleep(0.1)
+
+	print "Serial Finished"
 #################### End of Functions Definition ####################
 
 def main():
@@ -64,7 +111,22 @@ def main():
 	global turn_left
 	global brakes_on
 
+	global throttleFlag
+	global ignitionFlag
+	global accelerationFlag
+	global regenFlag
+	global coastFlag
+	global directionFlag
+
+	throttleFlag = False
+	ignitionFlag = False
+	accelerationFlag = False
+	regenFlag = False
+	coastFlag = False
+	directionFlag = False
+
 	brakes_on = False
+	first_loop = True
 
 	# Bluetooth Setup
 	print "Creating Bluetooth Server"
@@ -104,32 +166,30 @@ def main():
 				# Bluetooth receive
 				data = client_sock.recv(1024)
 	
-				print data[0]
+#				print data
 
-				# Serial communication
-#				serial_message = "312A2A3F0D".decode( "hex" )
-#				ser.write( serial_message )
-#				print "Serial Read: "
-#				sex = ser2.read( len( data ) )
-#				print sex
-
-				print data
 				if len( data ) == 0 :break
 				send_data = data.split(",")
-				
-#				if send_data[0] == "1":
-#					if hazards_on != True:
-#	                                       	hazards_on = True
-#                                        	t1 = threading.Thread( target = flash_hazards, args = ( "P9_11","P9_13", ) )
-#                                        	t1.setDaemon( True )
-#                                        	t1.start()
-#						GPIO.output("P9_11", GPIO.HIGH)
-#	                                        GPIO.output("P9_13", GPIO.HIGH)
-#
-#                                else:
-#                                        hazards_on = False
-#                                        GPIO.output("P9_11", GPIO.LOW)
-#                                        GPIO.output("P9_13", GPIO.LOW)
+
+				# Check for changes and set flags for Serial Commands/Queries				
+				if not first_loop:
+					if send_data[4] != previous_data[4]:
+						accelerationFlag = True		
+
+					if send_data[6] != previous_data[6]:
+						regenFlag = True
+
+					if send_data[7] != previous_data[7]:
+						directionFlag = True
+
+					if send_data[8] != previous_data[8]:
+						ignitionFlag = True
+
+					if send_data[9] != previous_data[9]:
+						throttleFlag = True
+
+					if send_data[10] != previous_data[10]:
+						coastFlag = True
 
 				# Check Hazards
 				if send_data[0] == "1":
@@ -181,11 +241,9 @@ def main():
 #					print "No brake"
 					GPIO.output( pBrakeOut, GPIO.LOW )
 
-#                		if serial_command != '':
-#                        		ser.write( serial_command.encode('hex') )
-#				serial_send = ser.read( 5 )
-#                		if serial_send != '':
-#                		        print serial_send
+				# Set previous data
+				previous_data = send_data
+				first_loop = False
 
 				client_sock.send( ",".join( send_data ) )
 #				client_sock.send( "Message received." )
@@ -230,8 +288,8 @@ if __name__=="__main__":
 	turn_right = False
 	turn_left = False
 	hazards_on = False
-	serial_command = ''
-	serial_send = ''
+	
+	
 
 	# Start main loop
 	main()
