@@ -7,63 +7,14 @@ import threading
 import json
 
 ################### Function Calls ####################
-def flash_hazards( led1, led2 ):
+def serial_comm():
 
-		global hazards_on
-		print "Hazard Thread open"
-		while hazards_on:
-				GPIO.output( led1, GPIO.HIGH )
-				GPIO.output( led2, GPIO.HIGH )
-				t.sleep( 0.5 )
-				GPIO.output( led1, GPIO.LOW )
-				GPIO.output( led2, GPIO.LOW )
-				t.sleep( 0.5 )
-		print "Hazard Thread Closed"
-
-def left_signal( led ):
-
-		global turn_left
-		print "Left Thread open"
-		while turn_left:
-			GPIO.output( led, GPIO.HIGH )
-			t.sleep( 0.5 )
-			GPIO.output( led, GPIO.LOW )
-			t.sleep( 0.5 )
-		print "Left Thread Closed"
-
-def right_signal( led ):
-
-		global turn_right
-		print "Right Thread open"
-		while turn_right:
-				GPIO.output( led, GPIO.HIGH )
-				t.sleep( 0.5 )
-				GPIO.output( led, GPIO.LOW )
-				t.sleep( 0.5 )
-		print "Right Thread Closed"
-
-def serial_read():
-
-	global  ser
-	global serial_send
-	global serial_command
-	while True:
-		t.sleep(1)
-		bytesToRead = ser.inWaiting()
-		serial_send = ser.read( bytesToRead )
-		if serial_send != '':
-			print serial_send
-                if serial_command != '':
-                        ser.write( serial_command )
-
-def serial_write():
-
-        global  ser
-        global serial_command
-        while True:
-                t.sleep(1)
-                if serial_command != '':
-                        ser.write( serial_command )
+	global ser
+	global ser2
+	
+	print "We're in!"
+	serial_message = "312A2A3F0D".decode( "hex" )
+        ser.write( serial_message )
 
 #################### End of Functions Definition ####################
 
@@ -79,6 +30,9 @@ def main():
 
 	if ser.isOpen() & ser2.isOpen():
 			print "Serial is open!"
+			t1 =  threading.Thread( target = serial_comm, args = ( ) )
+			t1.setDaemon( True )
+			t1.start()
 	else:
 			print "Serial failed"
 			sys.exit(0)
@@ -93,16 +47,24 @@ def main():
 #        t2.start()
 	
 	# GPIO Setup
-	pLeft = "P9_13"
-	pRight = "P9_11"
-	pBrake = "P9_15"
+	pLeft = "P9_11"
+	pRight = "P9_13"
+	pBrakeOut = "P9_15"
+	pBrakeIn = "P8_15"
 
-	GPIO.setup("P9_13", GPIO.OUT) # Left
-	GPIO.setup("P9_11", GPIO.OUT) # Right
-	GPIO.setup("P9_15", GPIO.OUT) # Brakes
+	GPIO.setup( pLeft, GPIO.OUT ) # Left
+	GPIO.setup( pRight, GPIO.OUT ) # Right
+	GPIO.setup( pBrakeOut, GPIO.OUT ) # Brakes
+
+	GPIO.setup( pBrakeIn, GPIO.IN ) # Brakes
+	GPIO.add_event_detect( pBrakeIn, GPIO.BOTH )
+
 	global hazards_on
 	global turn_right
 	global turn_left
+	global brakes_on
+
+	brakes_on = False
 
 	# Bluetooth Setup
 	print "Creating Bluetooth Server"
@@ -126,6 +88,15 @@ def main():
 
 	print "Accepted connection from ", address
 
+	# Start up Serial Communication
+	if ser.isOpen() & ser2.isOpen():
+                        print "Serial is open!"
+                        t1 =  threading.Thread( target = serial_comm, args = ( ) )
+                        t1.setDaemon( True )
+                        t1.start()
+        else:
+                        print "Serial failed"
+                        sys.exit(0)
 	try:
 		try:
 			while True:
@@ -135,10 +106,12 @@ def main():
 	
 				print data[0]
 
-				ser.write( data )
-				print "Serial Read: "
-				sex = ser2.read( len( data ) )
-				print sex
+				# Serial communication
+#				serial_message = "312A2A3F0D".decode( "hex" )
+#				ser.write( serial_message )
+#				print "Serial Read: "
+#				sex = ser2.read( len( data ) )
+#				print sex
 
 				print data
 				if len( data ) == 0 :break
@@ -166,7 +139,7 @@ def main():
 					GPIO.output( pRight, GPIO.HIGH )
 				else:
 #					print "Hazards off"
-#					hazards_on = False
+					hazards_on = False
 					if not ( turn_right & turn_left ):
 						GPIO.output( pLeft, GPIO.LOW )
 						GPIO.output( pRight, GPIO.LOW )
@@ -194,12 +167,19 @@ def main():
 					GPIO.output( pLeft, GPIO.LOW )
 
 				# Check Brakes
-				if send_data[3] == "1":
+#				if GPIO.event_detected( pBrakeIn ):
+				if GPIO.input( pBrakeIn):
+					brakes_on = True
+					send_data[4] = "0"
+				else:
+					brakes_on = False	
+
+				if brakes_on:
 #					print "Brakes on"
-					GPIO.output( pBrake, GPIO.HIGH )
+					GPIO.output( pBrakeOut, GPIO.HIGH )
 				else:
 #					print "No brake"
-					GPIO.output( pBrake, GPIO.LOW )
+					GPIO.output( pBrakeOut, GPIO.LOW )
 
 #                		if serial_command != '':
 #                        		ser.write( serial_command.encode('hex') )

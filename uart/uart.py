@@ -27,9 +27,9 @@ ser2 = serial.Serial(
 )
 
 ser.close()
-ser2.close()
+#ser2.close()
 
-ser2.open()
+#ser2.open()
 ser.open()
 if ser.isOpen() & ser2.isOpen():
 	print "Serial open"
@@ -41,7 +41,7 @@ if ser.isOpen() & ser2.isOpen():
 	while i < 10:
 		t1 = t.time()
 		ser.write("Hello World")
-		sex = ser2.read(i)
+#		sex = ser2.read(i)
 		t2 = t.time()
 		print "Time elapsed: "
 		print (t2 - t1)
@@ -50,11 +50,11 @@ if ser.isOpen() & ser2.isOpen():
 #		print sex
 #		print sex.encode("hex")
 		ser.close()
-		ser2.close()
+#		ser2.close()
 		ser.open()
-		ser2.open()
+#		ser2.open()
 
-ser2.close()
+#ser2.close()
 ser.close()
 #while True:
 #	try:
