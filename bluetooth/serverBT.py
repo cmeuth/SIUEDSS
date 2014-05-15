@@ -129,7 +129,7 @@ def main():
 				print data
 				if len( data ) == 0 :break
 				send_data = data.split(",")
-
+				
 #				if send_data[0] == "1":
 #					if hazards_on != True:
 #	                                       	hazards_on = True
@@ -182,26 +182,26 @@ def main():
 					GPIO.output("P9_15", GPIO.LOW)
 
 				# Build Serial command
-				serial_command = "{"
-				serial_command += '"hazards":"%s",' % send_data[0]
-				serial_command += '"right":"%s",' % send_data[1]
-				serial_command += '"left":"%s",' % send_data[2]
-				serial_command += '"brakes":"%s",' % send_data[3]
-				serial_command += '"speed":"%s",' % send_data[4]
-				serial_command += '"regen":"%s",' % send_data[5]
-				serial_command += '"throttle":"%s",' % send_data[6]
-				serial_command += '"direction":"%s",' % send_data[7]
-				serial_command += '"cruise":"%s",' % send_data[8]
-				serial_command += '"voltage":"%s",' % send_data[4]
-				serial_command += '"current":"%s"' % send_data[4]
-				serial_command += '}'
-				print serial_command
+#				serial_command = "{"
+#				serial_command += '"hazards":"%s",' % send_data[0]
+#				serial_command += '"right":"%s",' % send_data[1]
+#				serial_command += '"left":"%s",' % send_data[2]
+#				serial_command += '"brakes":"%s",' % send_data[3]
+#				serial_command += '"speed":"%s",' % send_data[4]
+#				serial_command += '"regen":"%s",' % send_data[5]
+#				serial_command += '"throttle":"%s",' % send_data[6]
+#				serial_command += '"direction":"%s",' % send_data[7]
+#				serial_command += '"cruise":"%s",' % send_data[8]
+#				serial_command += '"voltage":"%s",' % send_data[4]
+#				serial_command += '"current":"%s"' % send_data[4]
+#				serial_command += '}'
+#				print serial_command
 		
 				t.sleep(0.1)
 				# Write to GUI file
-				with open('/home/debian/builds/GUI/data.json', 'r+') as file:
+#				with open('/home/debian/builds/GUI/data.json', 'r+') as file:
 #					json.dump( serial_command, file )
-					file.write( serial_command )
+#					file.write( serial_command )
 #					print "File write complete"
 #				bytesToRead = ser.inWaiting()
 #                		serial_send = ser.read( bytesToRead )
@@ -212,8 +212,8 @@ def main():
 #                		if serial_send != '':
 #                		        print serial_send
 
-#				client_sock.send( serial_send )
-				client_sock.send( "Message received." )
+				client_sock.send( ",".join( send_data ) )
+#				client_sock.send( "Message received." )
 				
 
 		except IOError:
