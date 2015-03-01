@@ -60,23 +60,25 @@ class Application( Frame ):
 
 		# Buttons - For future implementation as well as display for now
 		# Regen button
-		self.regen = Button( self.right, text="REGEN", bg = regenColor )
-		self.regen.grid( column=2, row=0, sticky=E)
+		self.regen = Button( self.right, text="REGEN" )
+		self.regen.grid( column=2, row=0, sticky=E )
 
 		# Throttle  button
-                self.throttle = Button( self.right, text="THROTTLE", bg = throttleColor )
+                self.throttle = Button( self.right, text="THROTTLE" )
                 self.throttle.grid( column=2, row=1, sticky=E )
 
 		# Direction  button
-                self.direction = Button( self.right, text="DIRECTION", bg = directionColor )
+                self.direction = Button( self.right, text="DIRECTION" )
                 self.direction.grid( column=2, row=2, sticky=E )
+
 
 	def __init__( self, master=None ):
 		Frame.__init__( self, master, width=800, height=480 )
 		self.grid()
 		self.createWidgets()
+		self.after( 2000, update )
 
-def update( ):
+def update(  ):
 
                 # Global Declarations
                 global speedText
@@ -86,45 +88,54 @@ def update( ):
                 global regenColor
                 global throttleColor
                 global directionColor
+		global root
 
-                with open( "data.json") as file:
-                        data = json.load( file )
+		data = {}
+#		try:
+               	with open( "data.json") as file:
+                       	data = json.load( file )
 
                 speedText.set( data[ "speed" ] + " mph" )
-                voltageText.set( data[ "voltage" ] + " V")
-                currentText.set( data[ "current" ] + " A")
+      	        voltageText.set( data[ "voltage" ] + " V")
+               	currentText.set( data[ "current" ] + " A")
 		
 		if data[ "cruise"] == "0":
 			cruiseText.set( "Off")
 		else:
-	                cruiseText.set( data[ "cruise" ] )
+                	cruiseText.set( data[ "cruise" ] )
 
 		if data[ "regen" ] == "0":
-			regenColor =  "red" 
+			self.regen.configure(bg =  "red" )
 		else:
 			regenColor =  "green"
 
 		if data[ "throttle" ] == "0":
-                        throttleColor = "red"
-                else:
-                        throttleColor = "green"
+       	                throttleColor = "red"
+               	else:
+                       	throttleColor = "green"
 
 		if data[ "direction" ] == "0":
-                        directionColor =  "red" 
-                else:
-                        directionColor = "green"
+       	                directionColor =  "red" 
+               	else:
+                       	directionColor = "green"
+
+#		except:
+#			print "Error Opening JSON"
 		
 		if not first:	
                 	app.after( 2000, update )
 #		print speedText
-		print data[ "throttle" ]
+		print throttleColor
                 print "Updated"
 
 # Root is the main Frame
+global root
 root = Tk()
 root.geometry( "800x480" ) # set to size on 7" Touch Screen
 
+# To Not Break
 first = True
+
 # Display Variables
 speedText = StringVar()
 voltageText = StringVar()
@@ -138,7 +149,7 @@ update()
 first = False
 # Create class. Add widgets to Frame
 app = Application( master = root )
-app.after( 2000, update )
+#app.after( 2000, update )
 app.mainloop()
 root.destroy()
 

@@ -131,8 +131,34 @@ def main():
 #		print "send as %s" % send_data
 
 		sock.send(send_data)
-		incoming = sock.recv(1024)
-		print incoming
+		incoming = []
+		incoming = sock.recv(1024).split(",")
+#		print incoming
+		gui_info = {}
+
+		# Build GUI file
+		gui_info[ "hazards" ] = incoming[0] 
+		gui_info[ "right" ] = incoming[1]
+		gui_info[ "left" ] = incoming[2]
+		gui_info[ "brakes" ] = incoming[3]
+		gui_info[ "speed" ] = incoming[4]
+		gui_info[ "regen" ] = incoming[5]
+		gui_info[ "throttle" ] = incoming[6]
+		gui_info[ "direction" ] = incoming[7]
+		gui_info[ "cruise" ] = incoming[8]
+		gui_info[ "voltage" ] = incoming[4]
+		gui_info[ "current" ] = incoming[4]
+
+		print gui_info
+
+                # Write to GUI file
+                with open('/home/debian/builds/SIUEDDS/GUI/data.json', 'r+') as file:
+			file.truncate()
+	                json.dump( gui_info, file )
+#                       file.write( serial_command )
+#                        print "File write complete"
+
+#		print incoming
 		t.sleep(0.1)
 	sock.close()
 if __name__=="__main__":
