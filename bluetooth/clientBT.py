@@ -2,6 +2,8 @@ import Adafruit_BBIO.GPIO as GPIO
 import bluetooth
 import time as t
 import sys
+import json
+from pprint import pprint
 
 def send_BT( data, socket ):
 	socket.send(data)
@@ -49,6 +51,7 @@ def main():
 
 	print "Connected."
 	while True:
+
 		if GPIO.event_detected("P9_11"):
 			print "Hazards Change"
 			if GPIO.input("P9_11"):
@@ -77,7 +80,7 @@ def main():
                         data[3] = 0
 
 		if GPIO.input("P9_15"):
-			data[4] = data[2] + 5
+			data[4] = data[4] + 5
 		else:
 			if data[4] > 0:
 				data[4] = data[4] - 5
@@ -92,7 +95,7 @@ def main():
 		sock.send(send_data)
 		incoming = sock.recv(1024)
 		print incoming
-		t.sleep(2)
+		t.sleep(0.1)
 	sock.close()
 if __name__=="__main__":
 
