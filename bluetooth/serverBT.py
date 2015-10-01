@@ -46,15 +46,18 @@ def right_signal( led ):
 def serial_read():
 
 	global  ser
+	global serial_send
 	while True:
 		bytesToRead = ser.inWaiting()
-		print ser.read( bytesToRead )
+		serial_send = ser.read( bytesToRead )
+
 #################### End of Functions Definition ####################
 
 def main():
 
 	# Open serial communication
 	global ser
+	global serial_send
 	ser.close()
 	ser.open()
 	if ser.isOpen():
@@ -65,11 +68,12 @@ def main():
 	t1 = threading.Thread( target = serial_read, args = ( ) )
 	t1.setDaemon( True )
 	t1.start()
+
 	# GPIO Setup
 	GPIO.setup("P9_15", GPIO.OUT) # Brake
 	GPIO.setup("P9_13", GPIO.OUT) # Left
 	GPIO.setup("P9_11", GPIO.OUT) # Right
-		global hazards_on
+	global hazards_on
 	global turn_right
 	global turn_left
 
@@ -96,7 +100,9 @@ def main():
 	print "Accepted connection from ", address
 
 	try:
-		try:
+		try:t1 = threading.Thread( target = serial_read, args = ( ) )
+	t1.setDaemon( True )
+	t1.start()
 			while True:
 
 				data = client_sock.recv(1024)
@@ -155,14 +161,16 @@ def main():
 					print "No brake"
 					GPIO.output("P9_15", GPIO.LOW)
 
+				# Build Serial command
 				serial_command = "STATUS\n"
 				serial_command += "Hazards: [%s]\n" % send_data[0]
 				serial_command += "Right: [%s]\n" % send_data[1]
 				serial_command += "Left: [%s]\n" % send_data[2]
 				serial_command += "Brakes: [%s]\n" % send_data[3]
 				serial_command += "Acceleration: [%s]\n" % send_data[4]
-				client_sock.send( "Message Received" )
+
 				ser.write( serial_command )
+				client_sock.send( serial_send )
 
 		except IOError:
 			pass
@@ -190,6 +198,7 @@ if __name__=="__main__":
 	turn_left = False
 	hazards_on = False
 	serial_command = ''
+	serial_send = ''
 
 	# Start main loop
 	main()
