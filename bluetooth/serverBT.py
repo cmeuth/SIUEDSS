@@ -118,42 +118,42 @@ def main():
 #                                        GPIO.output("P9_11", GPIO.LOW)
 #                                        GPIO.output("P9_13", GPIO.LOW)
 
-								if send_data[0] == "1":
+				if send_data[0] == "1":
 					hazards_on = True
-										print "Hazards on"
-										GPIO.output("P9_11", GPIO.HIGH)
-										GPIO.output("P9_13", GPIO.HIGH)
-								else:
+					print "Hazards on"
+					GPIO.output("P9_11", GPIO.HIGH)
+					GPIO.output("P9_13", GPIO.HIGH)
+				else:
 					print "Hazards off"
 					hazards_on = False
-										GPIO.output("P9_11", GPIO.LOW)
-										GPIO.output("P9_13", GPIO.LOW)
+					GPIO.output("P9_11", GPIO.LOW)
+					GPIO.output("P9_13", GPIO.LOW)
 
 				if (send_data[1] == "1") & (hazards_on != True):
 					turn_right = True
-										print "Right Signal on"
-										GPIO.output("P9_11", GPIO.HIGH)
-								elif hazards_on != True:
+					print "Right Signal on"
+					GPIO.output("P9_11", GPIO.HIGH)
+				elif hazards_on != True:
 					turn_right = False
 					print "Right Signal off"
-										GPIO.output("P9_11", GPIO.LOW)
+					GPIO.output("P9_11", GPIO.LOW)
 
-								if (send_data[2] == "1") & (hazards_on != True):
+				if (send_data[2] == "1") & (hazards_on != True):
 					turn_left = True
-										print "Left Signal on"
-										GPIO.output("P9_13", GPIO.HIGH)
-								elif hazards_on != True:
+					print "Left Signal on"
+					GPIO.output("P9_13", GPIO.HIGH)
+				elif hazards_on != True:
 					turn_left = False
-										print "Left Signal Off"
-										GPIO.output("P9_13", GPIO.LOW)
+					print "Left Signal Off"
+					GPIO.output("P9_13", GPIO.LOW)
 
 
 				if send_data[3] == "1":
 					print "Brakes on"
-										GPIO.output("P9_15", GPIO.HIGH)
+					GPIO.output("P9_15", GPIO.HIGH)
 				else:
 					print "No brake"
-										GPIO.output("P9_15", GPIO.LOW)
+					GPIO.output("P9_15", GPIO.LOW)
 
 				serial_command = "STATUS\n"
 				serial_command += "Hazards: [%s]\n" % send_data[0]
