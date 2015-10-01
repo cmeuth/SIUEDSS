@@ -47,9 +47,24 @@ def serial_read():
 
 	global  ser
 	global serial_send
+	global serial_command
 	while True:
+		t.sleep(1)
 		bytesToRead = ser.inWaiting()
 		serial_send = ser.read( bytesToRead )
+		if serial_send != '':
+			print serial_send
+                if serial_command != '':
+                        ser.write( serial_command )
+
+def serial_write():
+
+        global  ser
+        global serial_command
+        while True:
+                t.sleep(1)
+                if serial_command != '':
+                        ser.write( serial_command )
 
 #################### End of Functions Definition ####################
 
@@ -62,15 +77,23 @@ def main():
 	ser.open()
 	if ser.isOpen():
 			print "Serial is open!"
+			ser.flushInput()
+			ser.flushOutput()
 	else:
 			print "Serial failed"
 			sys.exit(0)
-	t1 = threading.Thread( target = serial_read, args = ( ) )
-	t1.setDaemon( True )
-	t1.start()
 
+	# Open Serial Threads
+#	t1 = threading.Thread( target = serial_read, args = ( ) )
+#	t1.setDaemon( True )
+#	t1.start()
+
+#	t2 = threading.Thread( target = serial_read, args = ( ) )
+#        t2.setDaemon( True )
+#        t2.start()
+	
 	# GPIO Setup
-	GPIO.setup("P9_15", GPIO.OUT) # Brake
+	GPIO.setup("P9_15", GPIO.OUT) # Brakes
 	GPIO.setup("P9_13", GPIO.OUT) # Left
 	GPIO.setup("P9_11", GPIO.OUT) # Right
 	global hazards_on
@@ -100,13 +123,11 @@ def main():
 	print "Accepted connection from ", address
 
 	try:
-		try:t1 = threading.Thread( target = serial_read, args = ( ) )
-	t1.setDaemon( True )
-	t1.start()
+		try:
 			while True:
 
 				data = client_sock.recv(1024)
-				
+				print data
 				if len( data ) == 0 :break
 				send_data = data.split(",")
 
@@ -126,39 +147,39 @@ def main():
 
 				if send_data[0] == "1":
 					hazards_on = True
-					print "Hazards on"
+#					print "Hazards on"
 					GPIO.output("P9_11", GPIO.HIGH)
 					GPIO.output("P9_13", GPIO.HIGH)
 				else:
-					print "Hazards off"
+#					print "Hazards off"
 					hazards_on = False
 					GPIO.output("P9_11", GPIO.LOW)
 					GPIO.output("P9_13", GPIO.LOW)
 
 				if (send_data[1] == "1") & (hazards_on != True):
 					turn_right = True
-					print "Right Signal on"
+#					print "Right Signal on"
 					GPIO.output("P9_11", GPIO.HIGH)
 				elif hazards_on != True:
 					turn_right = False
-					print "Right Signal off"
+#					print "Right Signal off"
 					GPIO.output("P9_11", GPIO.LOW)
 
 				if (send_data[2] == "1") & (hazards_on != True):
 					turn_left = True
-					print "Left Signal on"
+#					print "Left Signal on"
 					GPIO.output("P9_13", GPIO.HIGH)
 				elif hazards_on != True:
 					turn_left = False
-					print "Left Signal Off"
+#					print "Left Signal Off"
 					GPIO.output("P9_13", GPIO.LOW)
 
 
 				if send_data[3] == "1":
-					print "Brakes on"
+#					print "Brakes on"
 					GPIO.output("P9_15", GPIO.HIGH)
 				else:
-					print "No brake"
+#					print "No brake"
 					GPIO.output("P9_15", GPIO.LOW)
 
 				# Build Serial command
@@ -169,8 +190,18 @@ def main():
 				serial_command += "Brakes: [%s]\n" % send_data[3]
 				serial_command += "Acceleration: [%s]\n" % send_data[4]
 
-				ser.write( serial_command )
-				client_sock.send( serial_send )
+				bytesToRead = ser.inWaiting()
+                		serial_send = ser.read( bytesToRead )
+                		if serial_command != '':
+                        		ser.write( serial_command )
+#				serial_send = ser.read( 5 )
+                		if serial_send != '':
+                		        print serial_send
+
+#				ser.write( serial_command )
+#				client_sock.send( serial_send )
+				client_sock.send( "Message received." )
+				
 
 		except IOError:
 			pass
@@ -191,7 +222,12 @@ if __name__=="__main__":
 
 	# UART Setup
 	UART.setup("UART2")
-	ser = serial.Serial(port = "/dev/ttyO0",baudrate=9600 )
+	ser = serial.Serial(	port = "/dev/ttyO0",
+				baudrate=9600,
+				parity = serial.PARITY_NONE,
+				stopbits = serial.STOPBITS_ONE,
+				bytesize = serial.EIGHTBITS
+			 )
 
 	# Global Variables
 	turn_right = False
