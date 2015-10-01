@@ -1,7 +1,11 @@
 import Adafruit_BBIO.GPIO as GPIO
+import Adafruit_BBIO.UART as UART
+import serial
 import bluetooth
 import time as t
 import threading
+import json
+import pprint
 
 ################### Function Calls ####################
 def flash_hazards( led1, led2 ):
@@ -39,11 +43,23 @@ def right_signal( led ):
                 t.sleep( 0.5 )
         print "Right Thread Closed"
 
-
+def serial_read():
+	
 #################### End of Functions Definition ####################
 
 def main():
 
+	# UART Setup
+	UART.setup("UART2")
+	ser = serial.Serial(port = "/dev/ttyO0",baudrate=9600 )
+
+	ser.close()
+	ser.open()
+	if ser.isOpen():
+                print "Serial is open!"
+	else:
+        	print "Serial failed"
+		exit(0)
 	# GPIO Setup
 	GPIO.setup("P9_15", GPIO.OUT) # Brake
 	GPIO.setup("P9_13", GPIO.OUT) # Left
@@ -79,6 +95,7 @@ def main():
 			while True:
 
 				data = client_sock.recv(1024)
+				
 				if len( data ) == 0 :break
 				send_data = data.split(",")
 
@@ -133,7 +150,6 @@ def main():
 					print "No brake"
                                         GPIO.output("P9_15", GPIO.LOW)
 
-#				print "Accelerate at: %s" % send_data[2]
 				print "STATUS"
 				print "Hazards: [%s]" % send_data[0]
 				print "Right: [%s]" % send_data[1]
@@ -141,6 +157,7 @@ def main():
 				print "Brakes: [%s]" % send_data[3]
 				print "Acceleration: [%s]" % send_data[4]
 				client_sock.send( "Message Received" )
+				ser.write("Bluetooth Transfer Occured")
 
 		except IOError:
 			pass
@@ -153,6 +170,8 @@ def main():
 		
 		client_sock.close()
 		server_sock.close()
+		GPIO.cleanup()
+		ser.close()
 
 	print "Connection closed."	
 if __name__=="__main__":
