@@ -10,61 +10,66 @@ import pprint
 ################### Function Calls ####################
 def flash_hazards( led1, led2 ):
 
-        global hazards_on
-        print "Hazard Thread open"
-        while hazards_on:
-                GPIO.output( led1, GPIO.HIGH )
-                GPIO.output( led2, GPIO.HIGH )
-                t.sleep( 0.5 )
-                GPIO.output( led1, GPIO.LOW )
-                GPIO.output( led2, GPIO.LOW )
-                t.sleep( 0.5 )
-        print "Hazard Thread Closed"
+		global hazards_on
+		print "Hazard Thread open"
+		while hazards_on:
+				GPIO.output( led1, GPIO.HIGH )
+				GPIO.output( led2, GPIO.HIGH )
+				t.sleep( 0.5 )
+				GPIO.output( led1, GPIO.LOW )
+				GPIO.output( led2, GPIO.LOW )
+				t.sleep( 0.5 )
+		print "Hazard Thread Closed"
 
 def left_signal( led ):
 
-        global turn_left
-	print "Left Thread open"
-        while turn_left:
-                GPIO.output( led, GPIO.HIGH )
-                t.sleep( 0.5 )
-                GPIO.output( led, GPIO.LOW )
-                t.sleep( 0.5 )
-        print "Left Thread Closed"
+		global turn_left
+		print "Left Thread open"
+		while turn_left:
+			GPIO.output( led, GPIO.HIGH )
+			t.sleep( 0.5 )
+			GPIO.output( led, GPIO.LOW )
+			t.sleep( 0.5 )
+		print "Left Thread Closed"
 
 def right_signal( led ):
 
-        global turn_right
-        print "Right Thread open"
-        while turn_right:
-                GPIO.output( led, GPIO.HIGH )
-                t.sleep( 0.5 )
-                GPIO.output( led, GPIO.LOW )
-                t.sleep( 0.5 )
-        print "Right Thread Closed"
+		global turn_right
+		print "Right Thread open"
+		while turn_right:
+				GPIO.output( led, GPIO.HIGH )
+				t.sleep( 0.5 )
+				GPIO.output( led, GPIO.LOW )
+				t.sleep( 0.5 )
+		print "Right Thread Closed"
 
 def serial_read():
-	
+
+	global  ser
+	while True:
+		bytesToRead = ser.inWaiting()
+		print ser.read( bytesToRead )
 #################### End of Functions Definition ####################
 
 def main():
 
-	# UART Setup
-	UART.setup("UART2")
-	ser = serial.Serial(port = "/dev/ttyO0",baudrate=9600 )
-
+	# Open serial communication
+	global ser
 	ser.close()
 	ser.open()
 	if ser.isOpen():
-                print "Serial is open!"
+			print "Serial is open!"
 	else:
-        	print "Serial failed"
-		exit(0)
+			print "Serial failed"
+			sys.exit(0)
+	t1 = threading.Thread( target = serial_read, args = ( ) )
+	t1.setDaemon( True )
+	t1.start()
 	# GPIO Setup
 	GPIO.setup("P9_15", GPIO.OUT) # Brake
 	GPIO.setup("P9_13", GPIO.OUT) # Left
 	GPIO.setup("P9_11", GPIO.OUT) # Right
-        global hazards_on
+		global hazards_on
 	global turn_right
 	global turn_left
 
@@ -113,51 +118,51 @@ def main():
 #                                        GPIO.output("P9_11", GPIO.LOW)
 #                                        GPIO.output("P9_13", GPIO.LOW)
 
-                                if send_data[0] == "1":
+								if send_data[0] == "1":
 					hazards_on = True
-                                        print "Hazards on"
-                                        GPIO.output("P9_11", GPIO.HIGH)
-                                        GPIO.output("P9_13", GPIO.HIGH)
-                                else:
+										print "Hazards on"
+										GPIO.output("P9_11", GPIO.HIGH)
+										GPIO.output("P9_13", GPIO.HIGH)
+								else:
 					print "Hazards off"
 					hazards_on = False
-                                        GPIO.output("P9_11", GPIO.LOW)
-                                        GPIO.output("P9_13", GPIO.LOW)
+										GPIO.output("P9_11", GPIO.LOW)
+										GPIO.output("P9_13", GPIO.LOW)
 
 				if (send_data[1] == "1") & (hazards_on != True):
 					turn_right = True
-                                        print "Right Signal on"
-                                        GPIO.output("P9_11", GPIO.HIGH)
-                                elif hazards_on != True:
+										print "Right Signal on"
+										GPIO.output("P9_11", GPIO.HIGH)
+								elif hazards_on != True:
 					turn_right = False
 					print "Right Signal off"
-                                        GPIO.output("P9_11", GPIO.LOW)
+										GPIO.output("P9_11", GPIO.LOW)
 
-                                if (send_data[2] == "1") & (hazards_on != True):
+								if (send_data[2] == "1") & (hazards_on != True):
 					turn_left = True
-                                        print "Left Signal on"
-                                        GPIO.output("P9_13", GPIO.HIGH)
-                                elif hazards_on != True:
+										print "Left Signal on"
+										GPIO.output("P9_13", GPIO.HIGH)
+								elif hazards_on != True:
 					turn_left = False
-                                        print "Left Signal Off"
-                                        GPIO.output("P9_13", GPIO.LOW)
+										print "Left Signal Off"
+										GPIO.output("P9_13", GPIO.LOW)
 
 
 				if send_data[3] == "1":
 					print "Brakes on"
-                                        GPIO.output("P9_15", GPIO.HIGH)
+										GPIO.output("P9_15", GPIO.HIGH)
 				else:
 					print "No brake"
-                                        GPIO.output("P9_15", GPIO.LOW)
+										GPIO.output("P9_15", GPIO.LOW)
 
-				print "STATUS"
-				print "Hazards: [%s]" % send_data[0]
-				print "Right: [%s]" % send_data[1]
-				print "Left: [%s]" % send_data[2]
-				print "Brakes: [%s]" % send_data[3]
-				print "Acceleration: [%s]" % send_data[4]
+				serial_command = "STATUS\n"
+				serial_command += "Hazards: [%s]\n" % send_data[0]
+				serial_command += "Right: [%s]\n" % send_data[1]
+				serial_command += "Left: [%s]\n" % send_data[2]
+				serial_command += "Brakes: [%s]\n" % send_data[3]
+				serial_command += "Acceleration: [%s]\n" % send_data[4]
 				client_sock.send( "Message Received" )
-				ser.write("Bluetooth Transfer Occured")
+				ser.write( serial_command )
 
 		except IOError:
 			pass
@@ -176,7 +181,15 @@ def main():
 	print "Connection closed."	
 if __name__=="__main__":
 
+	# UART Setup
+	UART.setup("UART2")
+	ser = serial.Serial(port = "/dev/ttyO0",baudrate=9600 )
+
+	# Global Variables
 	turn_right = False
 	turn_left = False
 	hazards_on = False
+	serial_command = ''
+
+	# Start main loop
 	main()
