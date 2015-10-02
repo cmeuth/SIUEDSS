@@ -1,11 +1,5 @@
-import Adafruit_BBIO.UART as UART
+import time
 import serial
-import time as t
-
-UART.setup("UART2")
-i = 0
-
-ser = serial.Serial(port = "/dev/ttyO0",baudrate=9600 )
 
 ser = serial.Serial(
 	port='/dev/ttyUSB0',
