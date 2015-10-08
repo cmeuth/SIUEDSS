@@ -99,25 +99,25 @@ def update( ):
 		else:
 	                cruiseText.set( data[ "cruise" ] )
 
-		if data[ "regen" ] == "on":
-			regenColor =  "green" 
+		if data[ "regen" ] == "0":
+			regenColor =  "red" 
 		else:
-			regenColor =  "red"
+			regenColor =  "green"
 
-		if data[ "throttle" ] == "on":
-                        throttleColor = "green"
-                else:
+		if data[ "throttle" ] == "0":
                         throttleColor = "red"
-
-		if data[ "direction" ] == "on":
-                        directionColor =  "green" 
                 else:
-                        directionColor = "red"
+                        throttleColor = "green"
+
+		if data[ "direction" ] == "0":
+                        directionColor =  "red" 
+                else:
+                        directionColor = "green"
 		
 		if not first:	
                 	app.after( 2000, update )
 #		print speedText
-		print regenColor
+		print data[ "throttle" ]
                 print "Updated"
 
 # Root is the main Frame

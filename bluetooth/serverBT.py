@@ -5,7 +5,6 @@ import bluetooth
 import time as t
 import threading
 import json
-import pprint
 
 ################### Function Calls ####################
 def flash_hazards( led1, led2 ):
@@ -71,17 +70,17 @@ def serial_write():
 def main():
 
 	# Open serial communication
-	global ser
-	global serial_send
-	ser.close()
-	ser.open()
-	ser.flushInput()
-	ser.flushOutput()
-	if ser.isOpen():
-			print "Serial is open!"
-	else:
-			print "Serial failed"
-			sys.exit(0)
+#	global ser
+#	global serial_send
+#	ser.close()
+#	ser.open()
+#	ser.flushInput()
+#	ser.flushOutput()
+#	if ser.isOpen():
+#			print "Serial is open!"
+#	else:
+#			print "Serial failed"
+#			sys.exit(0)
 
 	# Open Serial Threads
 #	t1 = threading.Thread( target = serial_read, args = ( ) )
@@ -151,8 +150,8 @@ def main():
 					GPIO.output("P9_11", GPIO.HIGH)
 					GPIO.output("P9_13", GPIO.HIGH)
 				else:
-#					print "Hazards off"
-					hazards_on = False
+					print "Hazards off"
+#					hazards_on = False
 					GPIO.output("P9_11", GPIO.LOW)
 					GPIO.output("P9_13", GPIO.LOW)
 
@@ -183,28 +182,42 @@ def main():
 					GPIO.output("P9_15", GPIO.LOW)
 
 				# Build Serial command
-				serial_command = ''
-				serial_command = "STATUS\n"
-				serial_command += "Hazards: [%s]\n" % send_data[0]
-				serial_command += "Right: [%s]\n" % send_data[1]
-				serial_command += "Left: [%s]\n" % send_data[2]
-				serial_command += "Brakes: [%s]\n" % send_data[3]
-				serial_command += "Acceleration: [%s]\n" % send_data[4]
-
-				bytesToRead = ser.inWaiting()
-                		serial_send = ser.read( bytesToRead )
-				t.sleep(0.5)
-                		if serial_command != '':
-                        		ser.write( serial_command.encode('hex') )
+				serial_command = "{"
+				serial_command += '"hazards":"%s",' % send_data[0]
+				serial_command += '"right":"%s",' % send_data[1]
+				serial_command += '"left":"%s",' % send_data[2]
+				serial_command += '"brakes":"%s",' % send_data[3]
+				serial_command += '"speed":"%s",' % send_data[4]
+				serial_command += '"regen":"%s",' % send_data[5]
+				serial_command += '"throttle":"%s",' % send_data[6]
+				serial_command += '"direction":"%s",' % send_data[7]
+				serial_command += '"cruise":"%s",' % send_data[8]
+				serial_command += '"voltage":"%s",' % send_data[4]
+				serial_command += '"current":"%s"' % send_data[4]
+				serial_command += '}'
+				print serial_command
+		
+				t.sleep(0.1)
+				# Write to GUI file
+				with open('/home/debian/builds/GUI/data.json', 'r+') as file:
+#					json.dump( serial_command, file )
+					file.write( serial_command )
+#					print "File write complete"
+#				bytesToRead = ser.inWaiting()
+#                		serial_send = ser.read( bytesToRead )
+#				t.sleep(0.5)
+#                		if serial_command != '':
+#                        		ser.write( serial_command.encode('hex') )
 #				serial_send = ser.read( 5 )
-                		if serial_send != '':
-                		        print serial_send
+#                		if serial_send != '':
+#                		        print serial_send
 
 #				client_sock.send( serial_send )
 				client_sock.send( "Message received." )
 				
 
 		except IOError:
+			print IOError
 			pass
 
 		print "Closing connection for no good reason"
