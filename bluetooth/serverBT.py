@@ -75,10 +75,10 @@ def main():
 	global serial_send
 	ser.close()
 	ser.open()
+	ser.flushInput()
+	ser.flushOutput()
 	if ser.isOpen():
 			print "Serial is open!"
-			ser.flushInput()
-			ser.flushOutput()
 	else:
 			print "Serial failed"
 			sys.exit(0)
@@ -183,6 +183,7 @@ def main():
 					GPIO.output("P9_15", GPIO.LOW)
 
 				# Build Serial command
+				serial_command = ''
 				serial_command = "STATUS\n"
 				serial_command += "Hazards: [%s]\n" % send_data[0]
 				serial_command += "Right: [%s]\n" % send_data[1]
@@ -192,13 +193,13 @@ def main():
 
 				bytesToRead = ser.inWaiting()
                 		serial_send = ser.read( bytesToRead )
+				t.sleep(0.5)
                 		if serial_command != '':
-                        		ser.write( serial_command )
+                        		ser.write( serial_command.encode('hex') )
 #				serial_send = ser.read( 5 )
                 		if serial_send != '':
                 		        print serial_send
 
-#				ser.write( serial_command )
 #				client_sock.send( serial_send )
 				client_sock.send( "Message received." )
 				
@@ -226,7 +227,8 @@ if __name__=="__main__":
 				baudrate=9600,
 				parity = serial.PARITY_NONE,
 				stopbits = serial.STOPBITS_ONE,
-				bytesize = serial.EIGHTBITS
+				bytesize = serial.EIGHTBITS,
+				timeout=None
 			 )
 
 	# Global Variables

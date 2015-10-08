@@ -5,16 +5,15 @@ import time as t
 UART.setup("UART2")
 i = 0
 
-ser = serial.Serial(port = "/dev/ttyO0",baudrate=9600 )
-
 ser = serial.Serial(
-	port='/dev/ttyUSB0',
+	port='/dev/ttyO0',
 	baudrate=9600,
 	parity=serial.PARITY_NONE,
 	stopbits=serial.STOPBITS_ONE,
 	bytesize=serial.EIGHTBITS,
-	timeout=None
+	timeout=0
 )
+
 ser.close()
 ser.open()
 if ser.isOpen():
@@ -22,13 +21,16 @@ if ser.isOpen():
 	ser.flushInput()
 	ser.flushOutput()
 
-
+ser.write("Hi")
 while True:
-	mimic = ''
-	bytesToRead = ser.inWaiting()
-	mimic = ser.read( bytesToRead )
-	if mimic != '':
-		print mimic
-
-		time.sleep(0.5)
-#		ser.write( "Got it" )
+	try:
+		while ser.inWaiting() > 0:
+			try:	
+				print ser.readline()
+			except:
+				print "Nothing to Read"
+				break
+	except:
+		print "Input error"
+			
+	ser.write( "Sup bro" )
