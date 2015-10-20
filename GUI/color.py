@@ -12,18 +12,18 @@ def start(parent):
     Tk.after(parent, 1000, change)
 
 def change():
-    global colour 
-    global colourselection
-    global count 
-    if (count < 2 ):
-        colour = colourselection[count]
-        button.configure(bg = colour)
-        count + 1
-    else:
-        colour = colourselection[count]
-        button.configure(bg = colour)
-        count = 1 
-    start(root)
+  	global colour 
+	global colourselection
+	global count 
+
+	if colour == 'red':
+		colour = 'blue'
+	else:
+		color = 'red'
+
+	print change
+
+	button.configure( bg = color )
 
 
 

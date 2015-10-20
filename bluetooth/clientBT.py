@@ -14,38 +14,45 @@ def main():
 	send_data = " "
 	
 	#GPIO Variables
-	GPIO.setup("P9_11", GPIO.IN)	#Hazards
-	GPIO.add_event_detect("P9_11", GPIO.BOTH)
+	GPIO.setup("P8_07", GPIO.IN)	#Hazards
+	GPIO.add_event_detect("P8_07", GPIO.BOTH)
 
-	GPIO.setup("P9_12", GPIO.IN)	#Left
-	GPIO.add_event_detect("P9_12", GPIO.BOTH)
+	GPIO.setup("P8_08", GPIO.IN)	#Brakes
+#	GPIO.add_event_detect("P8_08", GPIO.BOTH)
 
-	GPIO.setup("P9_13", GPIO.IN)	#Brakes
-	GPIO.add_event_detect("P9_13", GPIO.BOTH)
+	GPIO.setup("P8_09", GPIO.IN)	#Left
+	GPIO.add_event_detect("P8_09", GPIO.BOTH)
 
-	GPIO.setup("P9_14", GPIO.IN)	#Right
-	GPIO.add_event_detect("P9_14", GPIO.BOTH)
+	GPIO.setup("P8_10", GPIO.IN)	#Right
+	GPIO.add_event_detect("P8_10", GPIO.BOTH)
 
-	GPIO.setup("P9_15", GPIO.IN) # Accelerator
+	GPIO.setup("P8_11", GPIO.IN) # Accelerator
 
-	GPIO.setup("P9_16", GPIO.IN) # Regen
-	GPIO.add_event_detect("P9_16", GPIO.BOTH)
+	GPIO.setup("P9_23", GPIO.IN) # Regen
+#	GPIO.add_event_detect("P9_23", GPIO.BOTH)
 
-	GPIO.setup("P9_41", GPIO.IN) # Throttle
-	GPIO.add_event_detect("P9_41", GPIO.BOTH)
+	GPIO.setup("P9_21", GPIO.IN) # Throttle
+#	GPIO.add_event_detect("P9_21", GPIO.BOTH)
 
-	GPIO.setup("P9_42", GPIO.IN) # Direction
-	GPIO.add_event_detect("P9_42", GPIO.BOTH)
+	GPIO.setup("P9_27", GPIO.IN) # Direction
+#	GPIO.add_event_detect("P9_27", GPIO.BOTH)
 
-	GPIO.setup("P9_21", GPIO.IN) # Cruise Control
-	GPIO.add_event_detect("P9_21", GPIO.BOTH)
+	GPIO.setup("P9_15", GPIO.IN) # Cruise Control
+#	GPIO.add_event_detect("P9_15", GPIO.BOTH)
 
-	service_matches = bluetooth.find_service( uuid = uuid, 
+	GPIO.setup("P9_30", GPIO.IN) # Ignition
+#        GPIO.add_event_detect("P9_30", GPIO.BOTH)
+
+	while True:
+		service_matches = bluetooth.find_service( uuid = uuid, 
 						  address = revC_addr 
 						)
-	if len(service_matches) == 0:
-		print "Couldn't find other BBB"
-		sys.exit(0)
+	
+		if len(service_matches) == 0:
+			print "Couldn't find other BBB"
+	#		sys.exit(0)
+		else:
+			break
 
 	first_match = service_matches[0]
 	port = first_match["port"]
@@ -60,64 +67,64 @@ def main():
 	while True:
 
 		#Set Hazards
-		if GPIO.event_detected("P9_11"):
+		if GPIO.event_detected("P8_07"):
 			print "Hazards Change"
-			if GPIO.input("P9_11"):
+			if GPIO.input("P8_07"):
 				data[0] = 1
 			else:
 				data[0] = 0
 		
 		#Set Right Turn Signal
-		if GPIO.event_detected("P9_12"):
+		if GPIO.event_detected("P8_09"):
                         print "Right Turn Signal"
-                        if GPIO.input("P9_12"):
+                        if GPIO.input("P8_09"):
                                 data[1] = 1
                         else:
                                 data[1] = 0
 
 		#Set Left Turn Signal
-		if GPIO.event_detected("P9_14"):
+		if GPIO.event_detected("P8_10"):
 #                        print "Left Turn Signal"
-                        if GPIO.input("P9_14"):
+                        if GPIO.input("P8_10"):
                                 data[2] = 1
                         else:
                                 data[2] = 0
 
 		# Set Brake
-                if GPIO.input("P9_13"):
+                if GPIO.input("P8_08"):
 #              		print "Brake change"
                         data[3] = 1
                 else:
                         data[3] = 0
 
 		# Set Acceleration
-		if GPIO.input("P9_15"):
+		if GPIO.input("P8_11"):
 			data[4] = data[4] + 5
 		else:
 			if data[4] > 0:
 				data[4] = data[4] - 5
 
 		#Set Regen
-                if GPIO.input("P9_16"):
+                if GPIO.input("P9_23"):
 			if data[5] == 0:
 				data[5] = 1
 			else:
 				data[5] = 0		
 		#Set Throttle
-                if GPIO.input("P9_41"):
+                if GPIO.input("P9_21"):
 			if data[6] == 0:
 				data[6] = 1
 			else:
 				data[6] = 0	
 		#Set Direction
-                if GPIO.input("P9_42"):
+                if GPIO.input("P9_27"):
                         if data[7] == 0:
                                 data[7] = 1
                         else:
                                 data[7] = 0
 
 		#Set Cruise Control Speed
-                if GPIO.input("P9_21"):
+                if GPIO.input("P9_15"):
                         if data[8] == 0:
                                 data[8] = data[4]
                         else:
