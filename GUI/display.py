@@ -105,7 +105,7 @@ def update(  ):
                 	cruiseText.set( data[ "cruise" ] )
 
 		if data[ "regen" ] == "0":
-			self.regen.configure(bg =  "red" )
+			regenColor = "red" 
 		else:
 			regenColor =  "green"
 
