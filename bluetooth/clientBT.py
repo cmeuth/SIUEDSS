@@ -16,82 +16,6 @@ largeFont = ("Times", 20, "bold")
 #
 class Application( Frame ):
 
-        def say_hi( self ):
-                print "Hello World!"
-
-        def createWidgets( self ):
-
-                # Global Declarations
-                global speedText
-                global voltageText
-                global currentText
-		global accelerationText
-                global cruiseText
-                global regenColor
-                global throttleColor
-                global directionColor
-		global ignitionColor
-
-                # Left Side
-                self.left = LabelFrame( self, text="Car Statistics", font=mediumFont )
-                self.left.grid( column=0, row=0, padx=10, pady=10, ipadx=0, ipady=0, sticky=NSEW )
-
-                # Speed Display
-                self.speed = Label( self.left, text="Speed: ", width=20, font= smallFont )
-                self.speed.grid( column=0, row=0, sticky=W )
-
-                self.speedValue = Label( self.left, textvariable=speedText, width=20, font= smallFont)
-                self.speedValue.grid( column=1, row=0, sticky=E )
-
-                # Voltage Display
-                self.voltage = Label( self.left, text="Voltage: ", width=20, font= smallFont )
-                self.voltage.grid( column=0, row=1, sticky=W )
-
-                self.voltageValue = Label( self.left, textvariable=voltageText, width=20, font= smallFont )
-                self.voltageValue.grid( column=1, row=1, sticky=E )
-
-                # Current Draw Display
-                self.current = Label( self.left, text="Current Draw: ", width=20, font= smallFont )
-                self.current.grid( column=0, row=2, sticky=W )
-
-                self.currentValue = Label( self.left, textvariable=currentText, width=20, font= smallFont )
-                self.currentValue.grid( column=1, row=2, sticky=E )
-	
-		# Acceleration Display
-                self.acceleration = Label( self.left, text="Acceleration: ", width=20, font= smallFont )
-                self.acceleration.grid( column=0, row=3, sticky=W )
-
-                self.accelerationValue = Label( self.left, textvariable=accelerationText, width=20, font= smallFont )
-                self.accelerationValue.grid( column=1, row=3, sticky=E )
-
-                # Cruise Control Display
-                self.cruise = Label( self.left, text="Cruise Control: ", width=20, font= smallFont )
-                self.cruise.grid( column=0, row=4, sticky=W )
-
-                self.cruiseValue = Label( self.left, textvariable=cruiseText, width=20, font= smallFont )
-                self.cruiseValue.grid( column=1, row=4, sticky=E )
-
-                # Right Side
-                self.right = LabelFrame( self, text="Options", font=mediumFont )
-                self.right.grid( column=1, row=0, padx=10, pady=10, ipadx=0, ipady=0, sticky=NSEW )
-
-                # Buttons - For future implementation as well as display for now
-                # Regen Button
-                self.regen = Button( self.right, text="REGEN", command=lambda: rightKey('<Right>') )
-                self.regen.grid( column=2, row=0, sticky=E )
-
-                # Throttle Button
-                self.throttle = Button( self.right, text="THROTTLE", command=lambda: enterKey('<Return>') )
-                self.throttle.grid( column=2, row=1, sticky=E )
-
-                # Direction Button
-                self.direction = Button( self.right, text="DIRECTION", command=lambda: upKey('<Up>') )
-                self.direction.grid( column=2, row=2, sticky=E )
-
-		# Ignition Button
-                self.ignition = Button( self.right, text="IGNITION", command=lambda: downKey('<Down>') )
-                self.ignition.grid( column=2, row=3, sticky=E )
-
 	def updateButtons( self ):
 		global regenColor
 		global throttleColor
@@ -104,10 +28,116 @@ class Application( Frame ):
 		self.ignition.configure( bg = ignitionColor )
 
         def __init__( self, master=None ):
-                Frame.__init__( self, master, width=800, height=480 )
+
+		# Global Declarations
+                global speedText
+                global voltageText
+                global currentText
+                global accelerationText
+                global cruiseText
+                global regenColor
+                global throttleColor
+                global directionColor
+                global ignitionColor
+
+                Frame.__init__( self, master )
                 self.grid()
-                self.createWidgets()
-                self.after( 2000, update )
+		self.master.title( "SIUE Solar Car Team" )
+
+		# Create Frames
+		for r in range(6):
+			self.master.rowconfigure( r, weight=1 )
+		
+		for c in range(5):
+			self.master.columnconfigure( c, weight=1 )
+		
+		topFrame = Frame( master, bg="red" )
+		topFrame.grid( row=0, column=0, rowspan = 1, columnspan = 5, sticky = W+E+N+S )
+
+		statsFrame = Frame( master, bg="blue" )
+                statsFrame.grid( row=1, column=0, rowspan = 4, columnspan = 3, sticky = W+E+N+S )
+
+		optionFrame = Frame( master, bg="green" )
+                optionFrame.grid( row=1, column=3, rowspan = 4, columnspan = 2, sticky = W+E+N+S )
+	
+		logFrame = Frame( master, bg="orange" )
+                logFrame.grid( row=5, column=0, rowspan = 3, columnspan = 5, sticky = W+E+N+S )
+
+		#	
+		# Car Statistics
+		#
+		statsLabelFrame = LabelFrame( statsFrame, text="Car Statistics", font=mediumFont )
+		statsLabelFrame.pack( fill=BOTH, expand=1 )
+
+		# Speed Display
+                self.speed = Label( statsLabelFrame, text="Speed: ", font= smallFont )
+                self.speed.grid( column=0, row=0, sticky=W )
+
+                self.speedValue = Label( statsLabelFrame, textvariable=speedText, font= smallFont)
+                self.speedValue.grid( column=1, row=0, sticky=E )
+
+                # Voltage Display
+                self.voltage = Label( statsLabelFrame, text="Voltage: ", font= smallFont )
+                self.voltage.grid( column=0, row=1, sticky=W )
+
+                self.voltageValue = Label( statsLabelFrame, textvariable=voltageText, font= smallFont )
+                self.voltageValue.grid( column=1, row=1, sticky=E )
+
+                # Current Draw Display
+                self.current = Label( statsLabelFrame, text="Current Draw: ", font= smallFont )
+                self.current.grid( column=0, row=2, sticky=W )
+
+                self.currentValue = Label( statsLabelFrame, textvariable=currentText, font= smallFont )
+                self.currentValue.grid( column=1, row=2, sticky=E )
+
+                # Acceleration Display
+                self.acceleration = Label( statsLabelFrame, text="Acceleration: ", font= smallFont )
+                self.acceleration.grid( column=0, row=3, sticky=W )
+
+                self.accelerationValue = Label( statsLabelFrame, textvariable=accelerationText, font= smallFont )
+                self.accelerationValue.grid( column=1, row=3, sticky=E )
+
+                # Cruise Control Display
+                self.cruise = Label( statsLabelFrame, text="Cruise Control: ", font= smallFont )
+                self.cruise.grid( column=0, row=4, sticky=W )
+
+                self.cruiseValue = Label( statsLabelFrame, textvariable=cruiseText, font= smallFont )
+                self.cruiseValue.grid( column=1, row=4, sticky=E )
+
+		#
+		# Car Options
+		#
+		optionsLabelFrame = LabelFrame( optionFrame, text="Options", font=mediumFont )
+		optionsLabelFrame.pack( fill=BOTH, expand=1 )
+
+		# Regen Button
+                self.regen = Button( optionsLabelFrame, width=10, text="REGEN", font=smallFont, command=lambda: rightKey('<Right>') )
+                self.regen.grid( column=0, row=0, sticky=N )
+
+                # Throttle Button
+                self.throttle = Button( optionsLabelFrame, width=10, text="THROTTLE", font=smallFont, command=lambda: enterKey('<Return>') )
+                self.throttle.grid( column=0, row=1, sticky=N )
+
+                # Direction Button
+                self.direction = Button( optionsLabelFrame, width=10, text="DIRECTION", font=smallFont, command=lambda: upKey('<Up>') )
+                self.direction.grid( column=0, row=2, sticky=N )
+
+                # Ignition Button
+                self.ignition = Button( optionsLabelFrame, width=10, text="IGNITION", font=smallFont, command=lambda: downKey('<Down>') )
+                self.ignition.grid( column=0, row=3, sticky=N )
+
+                self.after( 500, update )
+
+	def updateButtons( self ):
+                global regenColor
+                global throttleColor
+                global directionColor
+                global ignitionColor
+
+                self.regen.configure( bg = regenColor )
+                self.throttle.configure( bg = throttleColor )
+                self.direction.configure( bg = directionColor )
+                self.ignition.configure( bg = ignitionColor )
 
 #
 # Functions for Keypresses. Handles Screen buttons.
@@ -242,7 +272,7 @@ def update(  ):
 
 #                if not first:
 		app.updateButtons()
-                app.after( 2000, update )
+                app.after( 500, update )
 #               print speedText
                 print "Updated"
 
@@ -410,8 +440,6 @@ if __name__=="__main__":
 	# BT Data
 	data = [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
-#	update()
-	first = False
 	# Create class. Add widgets to Frame
 	app = Application( master = root )
 	root.bind( '<Left>', leftKey )
@@ -419,13 +447,10 @@ if __name__=="__main__":
 	root.bind( '<Up>', upKey )
 	root.bind( '<Down>', downKey )
 	root.bind( '<Return>', enterKey )
+
+	# Start 'Start' ( BT Connection ), then the mainloop of GUI
 	app.after( 10, start )
 	app.mainloop()
 	root.destroy()
-#	t1 = threading.Thread( target = start, args = ( ) )
-#	t1.setDaemon = True
-#	t1.start()
-
-#	main()
 
 	print "Driver's Support deactivated."
