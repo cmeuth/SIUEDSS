@@ -55,77 +55,94 @@ class Application( Frame ):
 		topFrame.grid( row=0, column=0, rowspan = 1, columnspan = 5, sticky = W+E+N+S )
 
 		statsFrame = Frame( master, bg="blue" )
-                statsFrame.grid( row=1, column=0, rowspan = 4, columnspan = 3, sticky = W+E+N+S )
+                statsFrame.grid( row=1, column=0, rowspan = 3, columnspan = 3, sticky = W+E+N+S )
 
 		optionFrame = Frame( master, bg="green" )
-                optionFrame.grid( row=1, column=3, rowspan = 4, columnspan = 2, sticky = W+E+N+S )
+                optionFrame.grid( row=1, column=3, rowspan = 3, columnspan = 2, sticky = W+E+N+S )
 	
 		logFrame = Frame( master, bg="orange" )
-                logFrame.grid( row=5, column=0, rowspan = 3, columnspan = 5, sticky = W+E+N+S )
+                logFrame.grid( row=4, column=0, rowspan = 4, columnspan = 5, sticky = W+E+N+S )
 
 		#	
 		# Car Statistics
 		#
 		statsLabelFrame = LabelFrame( statsFrame, text="Car Statistics", font=mediumFont )
-		statsLabelFrame.pack( fill=BOTH, expand=1 )
+		statsLabelFrame.pack( fill=BOTH, expand=1, padx=5, pady=5 )
 
 		# Speed Display
-                self.speed = Label( statsLabelFrame, text="Speed: ", font= smallFont )
-                self.speed.grid( column=0, row=0, sticky=W )
+                self.speed = Label( statsLabelFrame, text="Speed: ", font= smallFont, width=20 )
+                self.speed.grid( column=0, row=0, sticky=E )
 
-                self.speedValue = Label( statsLabelFrame, textvariable=speedText, font= smallFont)
-                self.speedValue.grid( column=1, row=0, sticky=E )
+                self.speedValue = Label( statsLabelFrame, textvariable=speedText, font= smallFont, width=20)
+                self.speedValue.grid( column=1, row=0, sticky=W+E )
 
                 # Voltage Display
-                self.voltage = Label( statsLabelFrame, text="Voltage: ", font= smallFont )
+                self.voltage = Label( statsLabelFrame, text="Voltage: ", font= smallFont, width=20 )
                 self.voltage.grid( column=0, row=1, sticky=W )
 
-                self.voltageValue = Label( statsLabelFrame, textvariable=voltageText, font= smallFont )
-                self.voltageValue.grid( column=1, row=1, sticky=E )
+                self.voltageValue = Label( statsLabelFrame, textvariable=voltageText, font= smallFont, width=20 )
+                self.voltageValue.grid( column=1, row=1, sticky=W+E )
 
                 # Current Draw Display
-                self.current = Label( statsLabelFrame, text="Current Draw: ", font= smallFont )
+                self.current = Label( statsLabelFrame, text="Current Draw: ", font= smallFont, width=20 )
                 self.current.grid( column=0, row=2, sticky=W )
 
-                self.currentValue = Label( statsLabelFrame, textvariable=currentText, font= smallFont )
+                self.currentValue = Label( statsLabelFrame, textvariable=currentText, font= smallFont, width=20 )
                 self.currentValue.grid( column=1, row=2, sticky=E )
 
                 # Acceleration Display
-                self.acceleration = Label( statsLabelFrame, text="Acceleration: ", font= smallFont )
+                self.acceleration = Label( statsLabelFrame, text="Acceleration: ", font= smallFont, width=20 )
                 self.acceleration.grid( column=0, row=3, sticky=W )
 
-                self.accelerationValue = Label( statsLabelFrame, textvariable=accelerationText, font= smallFont )
+                self.accelerationValue = Label( statsLabelFrame, textvariable=accelerationText, font= smallFont, width=20 )
                 self.accelerationValue.grid( column=1, row=3, sticky=E )
 
                 # Cruise Control Display
-                self.cruise = Label( statsLabelFrame, text="Cruise Control: ", font= smallFont )
+                self.cruise = Label( statsLabelFrame, text="Cruise Control: ", font= smallFont, width=20 )
                 self.cruise.grid( column=0, row=4, sticky=W )
 
-                self.cruiseValue = Label( statsLabelFrame, textvariable=cruiseText, font= smallFont )
+                self.cruiseValue = Label( statsLabelFrame, textvariable=cruiseText, font= smallFont, width=20 )
                 self.cruiseValue.grid( column=1, row=4, sticky=E )
 
 		#
 		# Car Options
 		#
 		optionsLabelFrame = LabelFrame( optionFrame, text="Options", font=mediumFont )
-		optionsLabelFrame.pack( fill=BOTH, expand=1 )
+		optionsLabelFrame.pack( fill=BOTH, expand=1, padx=5, pady=5 )
 
 		# Regen Button
-                self.regen = Button( optionsLabelFrame, width=10, text="REGEN", font=smallFont, command=lambda: rightKey('<Right>') )
+                self.regen = Button( optionsLabelFrame, width=15, text="REGEN", font=smallFont, command=lambda: rightKey('<Right>') )
                 self.regen.grid( column=0, row=0, sticky=N )
 
                 # Throttle Button
-                self.throttle = Button( optionsLabelFrame, width=10, text="THROTTLE", font=smallFont, command=lambda: enterKey('<Return>') )
-                self.throttle.grid( column=0, row=1, sticky=N )
+                self.throttle = Button( optionsLabelFrame, width=15, text="THROTTLE", font=smallFont, command=lambda: enterKey('<Return>') )
+                self.throttle.grid( column=0, row=1, sticky=N, padx=100 )
 
                 # Direction Button
-                self.direction = Button( optionsLabelFrame, width=10, text="DIRECTION", font=smallFont, command=lambda: upKey('<Up>') )
+                self.direction = Button( optionsLabelFrame, width=15, text="DIRECTION", font=smallFont, command=lambda: upKey('<Up>') )
                 self.direction.grid( column=0, row=2, sticky=N )
 
                 # Ignition Button
-                self.ignition = Button( optionsLabelFrame, width=10, text="IGNITION", font=smallFont, command=lambda: downKey('<Down>') )
+                self.ignition = Button( optionsLabelFrame, width=15, text="IGNITION", font=smallFont, command=lambda: downKey('<Down>') )
                 self.ignition.grid( column=0, row=3, sticky=N )
+	
+		#
+                # Top Frame
+                #
+                topLabel = Label( topFrame, text="TOP", font=mediumFont )
+                topLabel.pack( fill=BOTH, expand=1, padx=5, pady=5 )
 
+		#
+                # Driver's Log
+                #
+                logLabelFrame = LabelFrame( logFrame, text="Driver's Log", font=mediumFont )
+                logLabelFrame.pack( fill=BOTH, expand=1, padx=5, pady=5 )
+		
+		# Lot Status
+		statusLabel = Label( logLabelFrame, text="Driver updates will go here.", font=smallFont )
+		statusLabel.pack( fill=BOTH, expand=1 )
+
+		# After set time, call the update function
                 self.after( 500, update )
 
 	def updateButtons( self ):
@@ -438,7 +455,7 @@ if __name__=="__main__":
 	directionColor = StringVar()
 
 	# BT Data
-	data = [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+	data = [ 0, 0, 0, 0, 0, 0, 0, 1, 0, 0]
 
 	# Create class. Add widgets to Frame
 	app = Application( master = root )
