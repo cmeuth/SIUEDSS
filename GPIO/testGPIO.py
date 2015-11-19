@@ -24,4 +24,4 @@ while True:
 	else:
 		print "Input off"
 
-	t.sleep( 1 )
+	t.sleep( .1 )
