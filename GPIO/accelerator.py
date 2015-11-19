@@ -18,21 +18,25 @@ def blink_leds( led ):
 def main():
 	print "Setting up GPIO"
 
+	accUp = "P8_14"
+	accDown = "P8_15"
+
 	# Variables
-	GPIO.setup("P9_11", GPIO.IN)
-	GPIO.add_event_detect("P9_11", GPIO.BOTH)
-	GPIO.setup("P9_15", GPIO.OUT)
+	GPIO.setup( accUp, GPIO.IN )
+	GPIO.setup( accDown, GPIO.IN )
+#	GPIO.add_event_detect( accDown, GPIO.BOTH )
+#	GPIO.setup( "P9_15", GPIO.OUT )
 	global running
-	speed = 0
+	speed = 50
 
 	try:
-
+		print "IN"
 		while True:
-			t.sleep(1)
-			if GPIO.input("P9_11"):
+			t.sleep(.1)
+			if GPIO.input( accUp ):
 				speed = speed + 5
 				print "Speed: %s" % speed
-			else:
+			elif GPIO.input( accDown ):
 				if (speed > 0):
 					speed = speed - 5
 				print "Speed: %s" % speed

@@ -111,20 +111,24 @@ class Application( Frame ):
 		optionsLabelFrame.pack( fill=BOTH, expand=1, padx=5, pady=5 )
 
 		# Regen Button
-                self.regen = Button( optionsLabelFrame, width=15, text="REGEN", font=smallFont, command=lambda: rightKey('<Right>') )
+                self.regen = Button( optionsLabelFrame, width=15, text="REGEN", font=smallFont, command=regenEnable )
                 self.regen.grid( column=0, row=0, sticky=N )
+
+		# Coast Button
+                self.coast = Button( optionsLabelFrame, width=15, text="COAST", font=smallFont, command=lambda: rightKey('<Right>') )
+                self.coast.grid( column=0, row=1, sticky=N )
 
                 # Throttle Button
                 self.throttle = Button( optionsLabelFrame, width=15, text="THROTTLE", font=smallFont, command=lambda: enterKey('<Return>') )
-                self.throttle.grid( column=0, row=1, sticky=N, padx=100 )
-
-                # Direction Button
-                self.direction = Button( optionsLabelFrame, width=15, text="DIRECTION", font=smallFont, command=lambda: upKey('<Up>') )
-                self.direction.grid( column=0, row=2, sticky=N )
+                self.throttle.grid( column=0, row=2, sticky=N, padx=100 )
 
                 # Ignition Button
                 self.ignition = Button( optionsLabelFrame, width=15, text="IGNITION", font=smallFont, command=lambda: downKey('<Down>') )
                 self.ignition.grid( column=0, row=3, sticky=N )
+
+		# Direction Button
+                self.direction = Button( optionsLabelFrame, width=15, text="DIRECTION", font=smallFont, command=lambda: upKey('<Up>') )
+                self.direction.grid( column=0, row=4, sticky=N )
 	
 		#
                 # Top Frame
@@ -150,43 +154,57 @@ class Application( Frame ):
                 global throttleColor
                 global directionColor
                 global ignitionColor
+		global coastColor
 
                 self.regen.configure( bg = regenColor )
                 self.throttle.configure( bg = throttleColor )
                 self.direction.configure( bg = directionColor )
                 self.ignition.configure( bg = ignitionColor )
+		self.coast.configure( bg = coastColor )
 
 #
 # Functions for Keypresses. Handles Screen buttons.
 # Must be bound to keys to root as defined in __init__
 #
 
-# Cruise Control
-def leftKey(event):
+def regenEnable( ):
+
 	global data
-
-        if data[5]  == 1:
-                data[5] = 0
-        else:
-                data[5] = 1
-
-# Regen Enable
-def rightKey(event):
-        global data
-	global minimumSpeed
+	global cruiseFlag
 
         if data[6]  == 1:
                 data[6] = 0
-		minimumSpeed = 0
         else:
                 data[6] = 1
-		minimumSpeed = 50
+		data[4] = 0
+		cruiseFlag = False
+
+# Hazards Control
+def leftKey(event):
+	global data
+
+        if data[0] == 1:
+                data[0] = 0
+        else:
+                data[0] = 1
+
+# Coast Button
+def rightKey(event):
+        global data
+	global cruiseFlag
+
+        if data[10] == 1:
+                data[10] = 0
+        else:
+                data[10] = 1
+		data[4] = 0
+		cruiseFlag = False
 
 # Direction
 def upKey(event):
         global data
 
-        if data[7]  == 1:
+        if data[7] == 1:
                 data[7] = 0
         else:
                 data[7] = 1
@@ -195,7 +213,7 @@ def upKey(event):
 def downKey(event):
         global data
 
-        if data[8]  == 1:
+        if data[8] == 1:
                 data[8] = 0
         else:
                 data[8] = 1
@@ -204,9 +222,9 @@ def downKey(event):
 def enterKey(event):
         global data
 
-        if data[9]  == 1:
+        if data[9] == 1:
                 data[9] = 0
-        else:
+        elif data[8] == 1:
                 data[9] = 1
 
 
@@ -225,6 +243,7 @@ def update(  ):
                 global throttleColor
                 global directionColor
 		global ignitionColor
+		global coastColor
                 global root
 		global data
 		global cruiseSpeed
@@ -243,19 +262,19 @@ def update(  ):
                 currentText.set( currentValue + " A")
 		accelerationText.set( str( data[4] * 2 ) + " %" )
 
-                if data[5] == 0:
-                        cruiseText.set( "Off")
-			cruiseSpeed = 0
-                else:
-			# Used to lock in speed
-			if cruiseSpeed == 0:
-	                        cruiseText.set( data[4] )
-				cruiseSpeed = data[4]
-
-                if cruiseSpeed > data[4]:
-                        speedText.set( str( cruiseSpeed ) + " mph" )
-                else:
-                        speedText.set( str( data[4] ) + " mph" )
+#                if data[5] == 0:
+#                        cruiseText.set( "Off")
+#			cruiseSpeed = 0
+#                else:
+#			# Used to lock in speed
+#			if cruiseSpeed == 0:
+#	                        cruiseText.set( data[4] )
+#				cruiseSpeed = data[4]
+#
+#                if cruiseSpeed > data[4]:
+#                        speedText.set( str( cruiseSpeed ) + " mph" )
+#                else:
+#                        speedText.set( str( data[4] ) + " mph" )
 
 
                 if data[6] == 0:
@@ -279,10 +298,14 @@ def update(  ):
                 else:
                         ignitionColor = "green"
 
+		if data[10] == 0:
+			coastColor = "red"
+		else:
+			coastColor = "green"
 
-		print "Throttle: " + throttleColor
-		print "Regen: " + regenColor
-		print "Direction: " + directionColor
+#		print "Throttle: " + throttleColor
+#		print "Regen: " + regenColor
+#		print "Direction: " + directionColor
 
 #               except:
 #                       print "Error Opening JSON"
@@ -291,10 +314,10 @@ def update(  ):
 		app.updateButtons()
                 app.after( 500, update )
 #               print speedText
-                print "Updated"
+#                print "Updated"
 
 #
-#
+# This function 
 #
 def start():
 	print "Main Loop Starting"
@@ -313,33 +336,45 @@ def start():
 
 #
 # Main function for bluetooth, serial(to be added) and GPIO interfacing.
+# 11/13/15: Brake functionality being moved to Server Side.
 #
 def main():
 
 	# Pinout Variables
-	pAcceleration = "P9_11"
-	pHazard = "P9_13"
-	pLeft = "P9_24"
-	pRight = "P9_25"
-	pBrake = "P9_26"
+	pAccelerationUp = "P8_14"
+	pAccelerationDown = "P8_15"
+	pRegen = "P9_13"
+	pLeft = "P9_26"
+	pRight = "P9_24"
+	pCruise = "P8_16"
 
 	# Bluetooth Variables
 	revC_addr = "00:19:0E:15:AD:EF"
-	uuid = "94f39d29-7d6d-437d-973b-fba39e49d4ee"
+	uuid =  "94f39d29-7d6d-437d-973b-fba39e49d4ee"
 	send_data = " "
 
 	# Global Variables
 	global data	
 	global cruiseSpeed
+	global cruiseText
+	global speedText
 	global minimumSpeed
+	global cruiseFlag
+	global coastFlag
+	global regenFlag
+
 	minimumSpeed = 0
+	cruiseSpeed = 0
 
 	#GPIO Variables
-	GPIO.setup( pAcceleration, GPIO.IN ) #Acceleration
-	GPIO.add_event_detect( pAcceleration, GPIO.BOTH )
+	GPIO.setup( pAccelerationUp, GPIO.IN ) #Acceleration Up
+	GPIO.add_event_detect( pAccelerationUp, GPIO.BOTH )
 
-	GPIO.setup( pHazard, GPIO.IN )	# Hazards
-	GPIO.add_event_detect( pHazard, GPIO.BOTH )
+	GPIO.setup( pAccelerationDown, GPIO.IN ) #Acceleration Down
+        GPIO.add_event_detect( pAccelerationDown, GPIO.BOTH )
+
+	GPIO.setup( pRegen, GPIO.IN )	# Regen
+	GPIO.add_event_detect( pRegen, GPIO.BOTH )
 
 	GPIO.setup( pLeft, GPIO.IN )	#Left
 	GPIO.add_event_detect( pLeft, GPIO.BOTH )
@@ -347,8 +382,8 @@ def main():
 	GPIO.setup( pRight, GPIO.IN )	#Right
 	GPIO.add_event_detect( pRight, GPIO.BOTH )
 
-	GPIO.setup( pBrake, GPIO.IN) # Brakes
-	GPIO.add_event_detect( pBrake, GPIO.BOTH )
+	GPIO.setup( pCruise, GPIO.IN) # Cruise
+	GPIO.add_event_detect( pCruise, GPIO.BOTH )
 
 	# Connect to other BBB. Wait for connection to open.
 	while True:
@@ -376,44 +411,86 @@ def main():
 	print "Connected."
 	while True:
 
-		#Set Hazards
-		if GPIO.event_detected( pHazard ):
-			print "Hazards Change"
-			if GPIO.input( pHazard ):
-				data[0] = 1
-			else:
-				data[0] = 0
+		# Regen
+		if GPIO.event_detected( pRegen ):
+#			print "Regen Change"
+			if GPIO.input( pRegen ):
+#				if data[6] == 0:
+#					data[6] = 1
+#					data[4] = 0
+#					cruiseFlag = 0
+#					regenFlag = True
+#				else:
+#					data[6] = 0
+#					regenFlag = False
+				regenEnable()
 		
 		#Set Left Turn Signal
 		if GPIO.event_detected( pLeft ):
 #                        print "Left Turn Signal"
                         if GPIO.input( pLeft ):
-                                data[1] = 1
-                        else:
-                                data[1] = 0
+                                if data[1] == 0:
+	        			data[1] = 1
+					data[2] = 0
+		                else:
+        	                        data[1] = 0
 
 		#Set Right Turn Signal
 		if GPIO.event_detected( pRight ):
 #                        print "Right Turn Signal"
                         if GPIO.input( pRight ):
-                                data[2] = 1
-                        else:
-                                data[2] = 0
+ 	                	if data[2] == 0:
+					data[2] = 1
+					data[1] = 0
+				else:
+                        		data[2] = 0
 
-		# Set Brake
-                if GPIO.input( pBrake ):
-#              		print "Brake change"
-                        data[3] = 1
+		# Set Cruise
+		if GPIO.event_detected( pCruise ):
+	                if GPIO.input( pCruise ):
+				if not cruiseFlag:
+					cruiseFlag = True
+					cruiseSpeed = data[4]
+				else:
+					cruiseFlag = False		
+#			cruiseFlag = not cruiseFlag
+		
+		if not cruiseFlag:
+                        cruiseText.set( "Off")
+                        cruiseSpeed = 0
+			speedText.set( str( data[4] ) + " mph" )
                 else:
-                        data[3] = 0
+                        # Used to lock in speed
+                        cruiseText.set( str( cruiseSpeed ) + " mph" )
+			speedText.set( str( cruiseSpeed ) + " mph" )
+		
+			
 
-		# Set Acceleration
-		if GPIO.input( pAcceleration ):
-			if data[4] < ( 50 + minimumSpeed) :
-				data[4] = data[4] + 1
-		else:
-			if data[4] > minimumSpeed:
-				data[4] = data[4] - 1
+		# Set Acceleration. Throttle MUST be enabled.
+		if data[9] == 1: 
+			if GPIO.input( pAccelerationUp ):
+				if data[4] < ( 50 + minimumSpeed) :
+					data[4] = data[4] + 1
+					if cruiseFlag:
+						cruiseSpeed = cruiseSpeed + 1
+			elif not cruiseFlag:
+				if data[4] > 0:
+					data[4] = data[4] - 1
+
+			if ( cruiseFlag and GPIO.input( pAccelerationDown ) ):
+				speedText.set( str( cruiseSpeed ) + " mph" )
+				if data[4] > 0:
+					data[4] = data[4] -1
+					cruiseSpeed = data[4]
+		
+		# Coast Select.
+#		if data[10] == 1:
+#			data[4] = 0
+#			cruiseFlag = False
+
+		if data[4] > 0:
+			data[10] = 0
+			data[6] = 0
 
 		# Send data
 		if len(data) == 0 : break
@@ -422,7 +499,7 @@ def main():
 			send_data += (str(x) + ",")
 #		print "data to send %s" % data
 #		print "send as %s" % send_data
-
+		print send_data
 		sock.send(send_data)
 		incoming = []
 		incoming = sock.recv(1024).split(",")
@@ -441,7 +518,7 @@ if __name__=="__main__":
 	root = Tk()
 	root.geometry( "800x480" ) # set to size on 7" Touch Screen
 
-	# To Not Break
+	# To Not Break : Check to see if still necessary
 	first = True
 
 	# Display Variables
@@ -454,8 +531,13 @@ if __name__=="__main__":
 	throttleColor = StringVar()
 	directionColor = StringVar()
 
+	# Flags
+	regenFlag = False
+	coastFlag = False
+	cruiseFlag = False
+
 	# BT Data
-	data = [ 0, 0, 0, 0, 0, 0, 0, 1, 0, 0]
+	data = [ 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0]
 
 	# Create class. Add widgets to Frame
 	app = Application( master = root )
