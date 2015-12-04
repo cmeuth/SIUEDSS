@@ -7,64 +7,62 @@ import threading
 import json
 
 ################### Function Calls ####################
-def flash_hazards( led1, led2 ):
+def serial_comm():
 
-		global hazards_on
-		print "Hazard Thread open"
-		while hazards_on:
-				GPIO.output( led1, GPIO.HIGH )
-				GPIO.output( led2, GPIO.HIGH )
-				t.sleep( 0.5 )
-				GPIO.output( led1, GPIO.LOW )
-				GPIO.output( led2, GPIO.LOW )
-				t.sleep( 0.5 )
-		print "Hazard Thread Closed"
+	global ser
+	global ser2
+	global coastFlag
+	global regenFlag
+	global accelerationFlag
+	global throttleFlag
+	global ignitionFlag
+	global directionFlag
+	global data
 
-def left_signal( led ):
+	inst_read = [''] * 46
+	char_read = ''
 
-		global turn_left
-		print "Left Thread open"
-		while turn_left:
-			GPIO.output( led, GPIO.HIGH )
-			t.sleep( 0.5 )
-			GPIO.output( led, GPIO.LOW )
-			t.sleep( 0.5 )
-		print "Left Thread Closed"
+	print "We're in!"
+	all_inst = "1**?\r" # Gets all instrumentation
+	serial_message = "1**?\r" # Gets all instrumentation
 
-def right_signal( led ):
-
-		global turn_right
-		print "Right Thread open"
-		while turn_right:
-				GPIO.output( led, GPIO.HIGH )
-				t.sleep( 0.5 )
-				GPIO.output( led, GPIO.LOW )
-				t.sleep( 0.5 )
-		print "Right Thread Closed"
-
-def serial_read():
-
-	global  ser
-	global serial_send
-	global serial_command
 	while True:
-		t.sleep(1)
-		bytesToRead = ser.inWaiting()
-		serial_send = ser.read( bytesToRead )
-		if serial_send != '':
-			print serial_send
-                if serial_command != '':
-                        ser.write( serial_command )
+		if coastFlag:
+		        ser.write( serial_message )
+			coastFlag = False
+			print "Coast Command sent"
+		elif regenFlag:
+		        ser.write( serial_message )
+			regenFlag = False
+			print "Regen Command sent"
+		elif accelerationFlag:
+		        ser.write( serial_message )
+			accelerationFlag = False
+			print "New Acceleration command sent"
+		elif throttleFlag:
+		        ser.write( serial_message )
+			throttleFlag = False
+			print "Throttle command sent"
+		elif ignitionFlag:
+		        ser.write( serial_message )
+			ignitionFlag = False
+			print "Ignition command sent"
+		elif directionFlag:
+		        ser.write( serial_message )
+			directionFlag = False
+			print "Direction command sent"
+		else:
+		        ser.write( all_inst )
+			print "Instrumentation query sent"
+			i = 0
+			for i in range( 46 ):
+				inst_read[ i ] = ser.read( 1 ).encode( "hex" )
 
-def serial_write():
+			print inst_read	
 
-        global  ser
-        global serial_command
-        while True:
-                t.sleep(1)
-                if serial_command != '':
-                        ser.write( serial_command )
+		t.sleep(0.1)
 
+	print "Serial Finished"
 #################### End of Functions Definition ####################
 
 def main():
@@ -79,6 +77,9 @@ def main():
 
 	if ser.isOpen() & ser2.isOpen():
 			print "Serial is open!"
+			t1 =  threading.Thread( target = serial_comm, args = ( ) )
+			t1.setDaemon( True )
+			t1.start()
 	else:
 			print "Serial failed"
 			sys.exit(0)
@@ -93,16 +94,39 @@ def main():
 #        t2.start()
 	
 	# GPIO Setup
-	pLeft = "P9_13"
-	pRight = "P9_11"
-	pBrake = "P9_15"
+	pLeft = "P9_11"
+	pRight = "P9_13"
+	pBrakeOut = "P9_15"
+	pBrakeIn = "P8_15"
 
-	GPIO.setup("P9_13", GPIO.OUT) # Left
-	GPIO.setup("P9_11", GPIO.OUT) # Right
-	GPIO.setup("P9_15", GPIO.OUT) # Brakes
+	GPIO.setup( pLeft, GPIO.OUT ) # Left
+	GPIO.setup( pRight, GPIO.OUT ) # Right
+	GPIO.setup( pBrakeOut, GPIO.OUT ) # Brakes
+
+	GPIO.setup( pBrakeIn, GPIO.IN ) # Brakes
+	GPIO.add_event_detect( pBrakeIn, GPIO.BOTH )
+
 	global hazards_on
 	global turn_right
 	global turn_left
+	global brakes_on
+
+	global throttleFlag
+	global ignitionFlag
+	global accelerationFlag
+	global regenFlag
+	global coastFlag
+	global directionFlag
+
+	throttleFlag = False
+	ignitionFlag = False
+	accelerationFlag = False
+	regenFlag = False
+	coastFlag = False
+	directionFlag = False
+
+	brakes_on = False
+	first_loop = True
 
 	# Bluetooth Setup
 	print "Creating Bluetooth Server"
@@ -126,6 +150,15 @@ def main():
 
 	print "Accepted connection from ", address
 
+	# Start up Serial Communication
+	if ser.isOpen() & ser2.isOpen():
+                        print "Serial is open!"
+                        t1 =  threading.Thread( target = serial_comm, args = ( ) )
+                        t1.setDaemon( True )
+                        t1.start()
+        else:
+                        print "Serial failed"
+                        sys.exit(0)
 	try:
 		try:
 			while True:
@@ -133,30 +166,30 @@ def main():
 				# Bluetooth receive
 				data = client_sock.recv(1024)
 	
-				print data[0]
+#				print data
 
-				ser.write( data )
-				print "Serial Read: "
-				sex = ser2.read( len( data ) )
-				print sex
-
-				print data
 				if len( data ) == 0 :break
 				send_data = data.split(",")
-				
-#				if send_data[0] == "1":
-#					if hazards_on != True:
-#	                                       	hazards_on = True
-#                                        	t1 = threading.Thread( target = flash_hazards, args = ( "P9_11","P9_13", ) )
-#                                        	t1.setDaemon( True )
-#                                        	t1.start()
-#						GPIO.output("P9_11", GPIO.HIGH)
-#	                                        GPIO.output("P9_13", GPIO.HIGH)
-#
-#                                else:
-#                                        hazards_on = False
-#                                        GPIO.output("P9_11", GPIO.LOW)
-#                                        GPIO.output("P9_13", GPIO.LOW)
+
+				# Check for changes and set flags for Serial Commands/Queries				
+				if not first_loop:
+					if send_data[4] != previous_data[4]:
+						accelerationFlag = True		
+
+					if send_data[6] != previous_data[6]:
+						regenFlag = True
+
+					if send_data[7] != previous_data[7]:
+						directionFlag = True
+
+					if send_data[8] != previous_data[8]:
+						ignitionFlag = True
+
+					if send_data[9] != previous_data[9]:
+						throttleFlag = True
+
+					if send_data[10] != previous_data[10]:
+						coastFlag = True
 
 				# Check Hazards
 				if send_data[0] == "1":
@@ -166,7 +199,7 @@ def main():
 					GPIO.output( pRight, GPIO.HIGH )
 				else:
 #					print "Hazards off"
-#					hazards_on = False
+					hazards_on = False
 					if not ( turn_right & turn_left ):
 						GPIO.output( pLeft, GPIO.LOW )
 						GPIO.output( pRight, GPIO.LOW )
@@ -194,18 +227,23 @@ def main():
 					GPIO.output( pLeft, GPIO.LOW )
 
 				# Check Brakes
-				if send_data[3] == "1":
+#				if GPIO.event_detected( pBrakeIn ):
+				if GPIO.input( pBrakeIn):
+					brakes_on = True
+					send_data[4] = "0"
+				else:
+					brakes_on = False	
+
+				if brakes_on:
 #					print "Brakes on"
-					GPIO.output( pBrake, GPIO.HIGH )
+					GPIO.output( pBrakeOut, GPIO.HIGH )
 				else:
 #					print "No brake"
-					GPIO.output( pBrake, GPIO.LOW )
+					GPIO.output( pBrakeOut, GPIO.LOW )
 
-#                		if serial_command != '':
-#                        		ser.write( serial_command.encode('hex') )
-#				serial_send = ser.read( 5 )
-#                		if serial_send != '':
-#                		        print serial_send
+				# Set previous data
+				previous_data = send_data
+				first_loop = False
 
 				client_sock.send( ",".join( send_data ) )
 #				client_sock.send( "Message received." )
@@ -250,8 +288,8 @@ if __name__=="__main__":
 	turn_right = False
 	turn_left = False
 	hazards_on = False
-	serial_command = ''
-	serial_send = ''
+	
+	
 
 	# Start main loop
 	main()
