@@ -10,7 +10,6 @@ import json
 def serial_comm():
 
 	global ser
-	global ser2
 	global coastFlag
 	global regenFlag
 	global accelerationFlag
@@ -18,47 +17,85 @@ def serial_comm():
 	global ignitionFlag
 	global directionFlag
 	global data
+	global speed_value
+	global voltage_value
+	global current_value
+	global driver_log
 
 	inst_read = [''] * 46
 	char_read = ''
 
 	print "We're in!"
 	all_inst = "1**?\r" # Gets all instrumentation
-	serial_message = "1**?\r" # Gets all instrumentation
+	serial_message = "" # What is read from MC
+	coast_command = "0F0!\r"
+	regen_command = "000=F6\r"
 
 	while True:
+		print "sending command"
+#		regenFlag = True
 		if coastFlag:
-		        ser.write( serial_message )
-			coastFlag = False
-			print "Coast Command sent"
+		        ser.write( coast_command )
+			ch = ser.read()
+                        if len(ch) == 0:
+                                driver_log = "Timeout Reached"
+                        else:
+				serial_message = ch
+				serial_message += ser.read( 10 )
+				print serial_message
+
+				coastFlag = False
+				driver_log = "Coast Command sent"
+
 		elif regenFlag:
-		        ser.write( serial_message )
-			regenFlag = False
-			print "Regen Command sent"
+			ser.write( regen_command )
+			ch = ser.read()			
+			if len(ch) == 0:
+                                driver_log = "Timeout Reached"
+                        else:
+                                serial_message = ch
+                                serial_message += ser.read( 12 )
+        	                print serial_message
+
+				regenFlag = False
+				driver_log = "Regen Command sent"
+
 		elif accelerationFlag:
-		        ser.write( serial_message )
+#		        ser.write(  )
 			accelerationFlag = False
 			print "New Acceleration command sent"
 		elif throttleFlag:
-		        ser.write( serial_message )
+#		        ser.write( serial_message )
 			throttleFlag = False
 			print "Throttle command sent"
 		elif ignitionFlag:
-		        ser.write( serial_message )
+#		        ser.write( serial_message )
 			ignitionFlag = False
 			print "Ignition command sent"
 		elif directionFlag:
-		        ser.write( serial_message )
+#		        ser.write( serial_message )
 			directionFlag = False
 			print "Direction command sent"
 		else:
+			inst_read = [''] * 46
 		        ser.write( all_inst )
 			print "Instrumentation query sent"
-			i = 0
-			for i in range( 46 ):
-				inst_read[ i ] = ser.read( 1 ).encode( "hex" )
-
-			print inst_read	
+			i = 1
+			ch = ser.read()
+			if len(ch) == 0:
+				print "Timeout Reached"
+			else:
+				inst_read[0] = ch
+				for i in range( 46 ):
+					inst_read[ i ] = ser.read( 1 ).encode( "hex" )
+		
+#			print inst_read	
+				#
+				# Set Speed, Voltage, Current Draw Data
+				#
+				speed_value = str( int( inst_read[5], 16 ) )
+				voltage_value = str( int( inst_read[7], 16 ) )
+				current_value = str( int( inst_read[9],16  ) )
 
 		t.sleep(0.1)
 
@@ -118,6 +155,10 @@ def main():
 	global coastFlag
 	global directionFlag
 
+	global speed_value
+	global voltage_value
+	global current_value
+
 	throttleFlag = False
 	ignitionFlag = False
 	accelerationFlag = False
@@ -169,6 +210,7 @@ def main():
 #				print data
 
 				if len( data ) == 0 :break
+				global send_data
 				send_data = data.split(",")
 
 				# Check for changes and set flags for Serial Commands/Queries				
@@ -177,7 +219,11 @@ def main():
 						accelerationFlag = True		
 
 					if send_data[6] != previous_data[6]:
-						regenFlag = True
+						if send_data[6] == "1":
+							coastFlag = True
+							regenFlag = True
+						else:
+							coastFlag = True
 
 					if send_data[7] != previous_data[7]:
 						directionFlag = True
@@ -189,8 +235,12 @@ def main():
 						throttleFlag = True
 
 					if send_data[10] != previous_data[10]:
-						coastFlag = True
+						if send_data[10] == "1":
+							coastFlag = True
 
+					send_data[11] = speed_value
+					send_data[12] = voltage_value
+					send_data[13] = current_value
 				# Check Hazards
 				if send_data[0] == "1":
 					hazards_on = True
@@ -244,7 +294,9 @@ def main():
 				# Set previous data
 				previous_data = send_data
 				first_loop = False
-
+				
+				# Change Driver's Log
+				send_data[14] = driver_log
 				client_sock.send( ",".join( send_data ) )
 #				client_sock.send( "Message received." )
 				
@@ -273,7 +325,8 @@ if __name__=="__main__":
 				baudrate = 19200,
 				parity = serial.PARITY_NONE,
 				stopbits = serial.STOPBITS_ONE,
-				bytesize = serial.EIGHTBITS
+				bytesize = serial.EIGHTBITS,
+				timeout = 0.5
 			 )
 
 	UART.setup("UART2")
@@ -289,7 +342,10 @@ if __name__=="__main__":
 	turn_left = False
 	hazards_on = False
 	
-	
+	speed_value = "2"
+	voltage_value = "2"
+	current_value = "2"	
+	driver_log = "Welcome to Black Nova."
 
 	# Start main loop
 	main()
