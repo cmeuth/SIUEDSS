@@ -1,3 +1,10 @@
+#
+# Client Side: Steering Wheel
+# Bluetooth Dongle: CSR 4.0
+# Must run as root
+#
+
+
 import Adafruit_BBIO.GPIO as GPIO
 import bluetooth
 import time as t
@@ -18,14 +25,24 @@ class Application( Frame ):
 
 	def updateButtons( self ):
 		global regenColor
+		global coastColor
 		global throttleColor
 		global directionColor
 		global ignitionColor
+		global directionText
+	
+                self.direction.configure( text = directionText )
 
 		self.regen.configure( bg = regenColor )
+		self.regen.configure( activebackground = regenColor )
+		self.coast.configure( bg = coastColor )
+		self.coast.configure( activebackground = coastColor )
 		self.throttle.configure( bg = throttleColor )
+		self.throttle.configure( activebackground = throttleColor )
 		self.direction.configure( bg = directionColor )
+		self.direction.configure( activebackground = directionColor )
 		self.ignition.configure( bg = ignitionColor )
+		self.ignition.configure( activebackground = ignitionColor )
 
         def __init__( self, master=None ):
 
@@ -35,10 +52,13 @@ class Application( Frame ):
                 global currentText
                 global accelerationText
                 global cruiseText
+		global directionText
+
                 global regenColor
                 global throttleColor
                 global directionColor
                 global ignitionColor
+		global driver_log
 
                 Frame.__init__( self, master )
                 self.grid()
@@ -143,24 +163,11 @@ class Application( Frame ):
                 logLabelFrame.pack( fill=BOTH, expand=1, padx=5, pady=5 )
 		
 		# Lot Status
-		statusLabel = Label( logLabelFrame, text="Driver updates will go here.", font=smallFont )
+		statusLabel = Label( logLabelFrame, textvariable=driver_log, font=smallFont )
 		statusLabel.pack( fill=BOTH, expand=1 )
 
 		# After set time, call the update function
                 self.after( 500, update )
-
-	def updateButtons( self ):
-                global regenColor
-                global throttleColor
-                global directionColor
-                global ignitionColor
-		global coastColor
-
-                self.regen.configure( bg = regenColor )
-                self.throttle.configure( bg = throttleColor )
-                self.direction.configure( bg = directionColor )
-                self.ignition.configure( bg = ignitionColor )
-		self.coast.configure( bg = coastColor )
 
 #
 # Functions for Keypresses. Handles Screen buttons.
@@ -203,11 +210,14 @@ def rightKey(event):
 # Direction
 def upKey(event):
         global data
+	global directionText
 
         if data[7] == 1:
                 data[7] = 0
+		directionText = "REVERSE"
         else:
                 data[7] = 1
+		directionText = "FORWARD"
 
 # Ignition
 def downKey(event):
@@ -249,17 +259,17 @@ def update(  ):
 		global cruiseSpeed
 		global voltageValue
 		global currentValue
+		global driver_log
 		# Values will have to be taken from Motor Controller
 		# Place Holders
-		voltageValue = "100"
-		currentValue = "30"
-		
-#               try:
-#                with open( "data.json") as file:
-#                        data = json.load( file )
+#		voltageValue = "100"
+#		currentValue = "30"
+		driver_log.set( data[14] )
+		speedText.set( str( data[11] ) + " mph" )
+                voltageText.set( str( data[12] ) + " V" )
+                currentText.set( str( data[13] ) + " A" )
 
-                voltageText.set( voltageValue + " V")
-                currentText.set( currentValue + " A")
+		# Will need to be altered. Value will be used to determine amperage to tell MC to draw.
 		accelerationText.set( str( data[4] * 2 ) + " %" )
 
 #                if data[5] == 0:
@@ -326,6 +336,10 @@ def start():
 		t1 = threading.Thread( target = main, args = ( ) )
 		t1.setDaemon = True
 		t1.start()
+
+		# Set Direction to Forward by default.
+		upKey( "<Up>" )
+
 	except KeyboardInterrupt:
 		print "Main Loop Stopped."
 #	app = Application( master = root )
@@ -362,6 +376,7 @@ def main():
 	global cruiseFlag
 	global coastFlag
 	global regenFlag
+	global driver_log
 
 	minimumSpeed = 0
 	cruiseSpeed = 0
@@ -415,14 +430,6 @@ def main():
 		if GPIO.event_detected( pRegen ):
 #			print "Regen Change"
 			if GPIO.input( pRegen ):
-#				if data[6] == 0:
-#					data[6] = 1
-#					data[4] = 0
-#					cruiseFlag = 0
-#					regenFlag = True
-#				else:
-#					data[6] = 0
-#					regenFlag = False
 				regenEnable()
 		
 		#Set Left Turn Signal
@@ -458,11 +465,11 @@ def main():
 		if not cruiseFlag:
                         cruiseText.set( "Off")
                         cruiseSpeed = 0
-			speedText.set( str( data[4] ) + " mph" )
+#			speedText.set( str( data[4] ) + " mph" )
                 else:
                         # Used to lock in speed
                         cruiseText.set( str( cruiseSpeed ) + " mph" )
-			speedText.set( str( cruiseSpeed ) + " mph" )
+#			speedText.set( str( cruiseSpeed ) + " mph" )
 		
 			
 
@@ -478,7 +485,7 @@ def main():
 					data[4] = data[4] - 1
 
 			if ( cruiseFlag and GPIO.input( pAccelerationDown ) ):
-				speedText.set( str( cruiseSpeed ) + " mph" )
+#				speedText.set( str( cruiseSpeed ) + " mph" )
 				if data[4] > 0:
 					data[4] = data[4] -1
 					cruiseSpeed = data[4]
@@ -499,11 +506,18 @@ def main():
 			send_data += (str(x) + ",")
 #		print "data to send %s" % data
 #		print "send as %s" % send_data
-		print send_data
+#		print send_data
 		sock.send(send_data)
 		incoming = []
 		incoming = sock.recv(1024).split(",")
 		print incoming
+
+		# Update UI based on info received
+		data[11] = incoming[11]
+		data[12] = incoming[12]
+		data[13] = incoming[13]
+	
+		data[14] = incoming[14]
 
 		t.sleep(0.1)
 
@@ -527,18 +541,36 @@ if __name__=="__main__":
 	currentText = StringVar()
 	accelerationText = StringVar()
 	cruiseText = StringVar()
+	directionText = StringVar()
+
+	coastColor = StringVar()
 	regenColor = StringVar()
 	throttleColor = StringVar()
 	directionColor = StringVar()
 
+	driver_log = StringVar()
+	
 	# Flags
 	regenFlag = False
 	coastFlag = False
 	cruiseFlag = False
 
 	# BT Data
-	data = [ 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0]
-
+	# 0 - Hazards
+	# 1 - Left
+	# 2 - Right
+	# 3 - Brakes
+	# 4 - Acceleration
+	# 5 - Cruise
+	# 6 - Regen
+	# 7 - Direction
+	# 8 - Ignition
+	# 9 - Throttle
+	# 10 - Coast
+	# 11 - Speed
+	# 12 - Voltage
+	# 13 - Current Draw
+	data = [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '' ]
 	# Create class. Add widgets to Frame
 	app = Application( master = root )
 	root.bind( '<Left>', leftKey )
@@ -546,6 +578,8 @@ if __name__=="__main__":
 	root.bind( '<Up>', upKey )
 	root.bind( '<Down>', downKey )
 	root.bind( '<Return>', enterKey )
+#	# Uncomment to disable cursor.
+#	root.config( cursor="none" )
 
 	# Start 'Start' ( BT Connection ), then the mainloop of GUI
 	app.after( 10, start )
