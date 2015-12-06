@@ -55,33 +55,51 @@ while True:
 #		print message
 		time.sleep(0.1)	
 		if message == "1**?\r":
-			print "All instrument Request"
 #			message = ""
+#			print message
 			# Echoes back orignal command and adds Line feed (\n or 0a)
 			message = message.encode( "hex" )
 			message += '0A'
 			for x in instruments:
 				message += ( x + '09' )
 			message += '0D0A'
-			print message			
+#			print message			
 			ser.write( message.decode( "hex" ) )
-		
+			print "All instrument Request"
+			message = ""
+		# Coast Message		
 		elif message == "0F0!\r":
-			print "Coast message received."
 
 			message = message.encode( "hex" )
 			message += '0A23000D0A'
 #			print message
 			ser.write( message.decode( "hex" ) )
-
-		elif message == "000=F6\r":
-                        print "Regen message received."
+			print "Coast message received."
+			message = ""
+		# Regen Message
+		elif message == "000<FFF6\r":
 
                         message = message.encode( "hex" )
                         message += '0A23000D0A'
-
+			
+#			print message
                         ser.write( message.decode( "hex" ) )	
-		message = ""
+                        print "Regen message received."
+			message = ""
+		# New Torque Message
+		elif "000<" in message:
+#			print message
+
+#			instruments[9] = message[4:8]
+#			print "New torque: " + instruments[9] 
+			message = message.encode( "hex" )
+			
+			message += '0A23000D0A'
+#			print message
+                        ser.write( message.decode( "hex" ) )
+			print "New Torque Requested"
+			message = ""
+
 		print i
 		i += 1
 
