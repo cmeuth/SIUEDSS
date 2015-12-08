@@ -182,6 +182,7 @@ def regenEnable( ):
         if data[6]  == 1:
                 data[6] = 0
         else:
+		data[10] = 0
                 data[6] = 1
 		data[4] = 0
 		cruiseFlag = False
@@ -204,6 +205,7 @@ def rightKey(event):
                 data[10] = 0
         else:
                 data[10] = 1
+		data[6] = 0
 		data[4] = 0
 		cruiseFlag = False
 
@@ -267,10 +269,10 @@ def update(  ):
 		driver_log.set( data[14] )
 		speedText.set( str( data[11] ) + " mph" )
                 voltageText.set( str( data[12] ) + " V" )
-                currentText.set( str( data[13] ) + " A" )
+                currentText.set( str( data[13] ) + " dA" )
 
 		# Will need to be altered. Value will be used to determine amperage to tell MC to draw.
-		accelerationText.set( str( data[4] * 2 ) + " %" )
+		accelerationText.set( str( data[4] ) + " dA" )
 
 #                if data[5] == 0:
 #                        cruiseText.set( "Off")
@@ -380,6 +382,7 @@ def main():
 
 	minimumSpeed = 0
 	cruiseSpeed = 0
+	desired_torque = 0
 
 	#GPIO Variables
 	GPIO.setup( pAccelerationUp, GPIO.IN ) #Acceleration Up
@@ -468,7 +471,7 @@ def main():
 #			speedText.set( str( data[4] ) + " mph" )
                 else:
                         # Used to lock in speed
-                        cruiseText.set( str( cruiseSpeed ) + " mph" )
+                        cruiseText.set( str( cruiseSpeed ) + " dA" )
 #			speedText.set( str( cruiseSpeed ) + " mph" )
 		
 			
@@ -476,18 +479,18 @@ def main():
 		# Set Acceleration. Throttle MUST be enabled.
 		if data[9] == 1: 
 			if GPIO.input( pAccelerationUp ):
-				if data[4] < ( 50 + minimumSpeed) :
-					data[4] = data[4] + 1
+				if data[4] < ( 500 + minimumSpeed) :
+					data[4] = data[4] + 5
 					if cruiseFlag:
-						cruiseSpeed = cruiseSpeed + 1
+						cruiseSpeed = cruiseSpeed + 5
 			elif not cruiseFlag:
 				if data[4] > 0:
-					data[4] = data[4] - 1
+					data[4] = data[4] - 5
 
 			if ( cruiseFlag and GPIO.input( pAccelerationDown ) ):
 #				speedText.set( str( cruiseSpeed ) + " mph" )
 				if data[4] > 0:
-					data[4] = data[4] -1
+					data[4] = data[4] -5
 					cruiseSpeed = data[4]
 		
 		# Coast Select.
@@ -496,23 +499,34 @@ def main():
 #			cruiseFlag = False
 
 		if data[4] > 0:
-			data[10] = 0
 			data[6] = 0
+			data[10] = 0
 
 		# Send data
 		if len(data) == 0 : break
 		send_data = ""
+
+#		data[4] = str( hex( desired_torque ).split( 'x' )[1] )
+#                if len(data[4] == 1):
+#                        data[4] = "000" + data[4]
+#                elif len(data[4] == 2):
+#                        data[4] = "00" + data[4]
+#                elif len(data[4] == 3):
+#                        data[4] = "0" + data[4]
+
+#                print data[4]
 		for x in data:
 			send_data += (str(x) + ",")
 #		print "data to send %s" % data
 #		print "send as %s" % send_data
 #		print send_data
+
 		sock.send(send_data)
 		incoming = []
 		incoming = sock.recv(1024).split(",")
 		print incoming
 
-		# Update UI based on info received
+		# Update UI based on info received	
 		data[11] = incoming[11]
 		data[12] = incoming[12]
 		data[13] = incoming[13]
