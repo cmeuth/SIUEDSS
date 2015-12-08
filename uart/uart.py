@@ -31,6 +31,7 @@ ser.close()
 
 #ser2.open()
 ser.open()
+
 if ser.isOpen() & ser2.isOpen():
 	print "Serial open"
 	print "Serial 2 open"
@@ -38,37 +39,17 @@ if ser.isOpen() & ser2.isOpen():
 #	ser.flushOutput()
 
 	i = 0
-	while i < 10:
-		t1 = t.time()
-		ser.write("Hello World")
-#		sex = ser2.read(i)
-		t2 = t.time()
-		print "Time elapsed: "
-		print (t2 - t1)
-		i = i + 1
-#		print i
-#		print sex
-#		print sex.encode("hex")
-		ser.close()
-#		ser2.close()
-		ser.open()
-#		ser2.open()
+	char_read = ""
 
-#ser2.close()
-ser.close()
-#while True:
-#	try:
-#		while ser.inWaiting() > 0:
-#			try:	
-#				print ser.readline()
-#			except:
-#				print "Nothing to Read"
-#				break
-#	except:
-#		print "Input error"
-#			
-#	ser.write( "Sup bro" )
- 
-# Eventually, you'll want to clean up, but leave this commented for now, 
-# as it doesn't work yet
-#UART.cleanup()
+	while True:
+
+		ser.write( "312A2A3F0D312A2A3F0D0A".decode( "hex" ) )
+
+		while char_read != "0a":
+			char_read = ser.read( 1 ).encode( "hex" )
+			print char_read
+
+		char_read = ""
+else:
+	print "Serial Fail"
+	sys.exit( 0 )

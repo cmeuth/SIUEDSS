@@ -16,26 +16,40 @@ def serial_comm():
 	global throttleFlag
 	global ignitionFlag
 	global directionFlag
-	global data
+	global send_data
 	global speed_value
 	global voltage_value
 	global current_value
 	global driver_log
-
-	inst_read = [''] * 46
+	global desired_torque
+	global throttleEnable
+	global ignitionEnable
+	global directionEnable
+	inst_read = [''] * 39
 	char_read = ''
 
 	print "We're in!"
 	all_inst = "1**?\r" # Gets all instrumentation
 	serial_message = "" # What is read from MC
 	coast_command = "0F0!\r"
-	regen_command = "000=F6\r"
+	regen_assign = "000<FFF6\r"
+	acc_assign = "000<"
+	throttle_assign = "302.7="
+	ignition_assign = "302.b="
+	direction_assign = "302.c="
 
+	#
+	# Main loop to continually check which messages to send to Motor Controller
+	# If no cmonnads to be sent, the instrumentation is read and sent to the user.
+	#
 	while True:
 		print "sending command"
+		inst_read = [''] * 39
+
 #		regenFlag = True
 		if coastFlag:
 		        ser.write( coast_command )
+			t.sleep( 0.2 )
 			ch = ser.read()
                         if len(ch) == 0:
                                 driver_log = "Timeout Reached"
@@ -48,56 +62,153 @@ def serial_comm():
 				driver_log = "Coast Command sent"
 
 		elif regenFlag:
-			ser.write( regen_command )
+			
+			ser.write( coast_command )
+                        t.sleep( 0.1 )
+                        ch = ser.read()
+                        if len(ch) == 0:
+                                driver_log = "Timeout Reached"
+                        else:
+                                serial_message = ch
+                                serial_message += ser.read( 10 )
+                                print serial_message
+
+			ser.write( regen_assign )
+			t.sleep( 0.2 )
 			ch = ser.read()			
 			if len(ch) == 0:
                                 driver_log = "Timeout Reached"
                         else:
                                 serial_message = ch
-                                serial_message += ser.read( 12 )
-        	                print serial_message
+                                serial_message += ser.read( 13 )
+	   	                print serial_message
 
 				regenFlag = False
 				driver_log = "Regen Command sent"
 
 		elif accelerationFlag:
-#		        ser.write(  )
-			accelerationFlag = False
+				
+			acc_assign += desired_torque
+				
+			acc_assign += '\r'
+		        ser.write( acc_assign )
+			print acc_assign
+			t.sleep( 0.2 )
+			ch = ser.read()
+                        if len(ch) == 0:
+                                driver_log = "Timeout Reached"
+                        else:
+                                serial_message = ch
+                                serial_message += ser.read( 13 )
+                                print serial_message
+
+                                accelerationFlag = False
+                                driver_log = "New Torque Requested"
+
 			print "New Acceleration command sent"
+			acc_assign = "000<"
+
 		elif throttleFlag:
+			if throttleEnable:
+				throttle_assign += "1\r"
+			else:
+				throttle_assign += "0\r"
+
+                        ser.write( throttle_assign )
+
+                        t.sleep( 0.2 )
+                        ch = ser.read()
+                        if len(ch) == 0:
+                                driver_log = "Timeout Reached"
+                        else:
+                                serial_message = ch
+                                serial_message += ser.read( 12 )
+                                print serial_message
+
+				if throttleEnable:
+	                                driver_log = "Throttle Enabled"
+				else:
+	                                driver_log = "Throttle Disabled"
+
+                        throttle_assign = "302.7="
 #		        ser.write( serial_message )
 			throttleFlag = False
 			print "Throttle command sent"
 		elif ignitionFlag:
-#		        ser.write( serial_message )
-			ignitionFlag = False
+                        if ignitionEnable:
+                                ignition_assign += "1\r"
+                        else:
+                                ignition_assign += "0\r"
+
+                        ser.write( ignition_assign )
+
+                        t.sleep( 0.2 )
+                        ch = ser.read()
+                        if len(ch) == 0:
+                                driver_log = "Timeout Reached"
+                        else:
+                                serial_message = ch
+                                serial_message += ser.read( 12 )
+                                print serial_message
+	                        if ignitionEnable:
+        	                        driver_log = "Ignition Enabled"
+                	        else:
+                        	        driver_log = "Ignition Disabled"
+				ignitionFlag = False
+
+                        ignition_assign = "302.b="
 			print "Ignition command sent"
 		elif directionFlag:
-#		        ser.write( serial_message )
+			if directionEnable:
+                                direction_assign += "1\r"
+                        else:
+                                direction_assign += "0\r"
+
+                        ser.write( direction_assign )
+
+                        t.sleep( 0.2 )
+                        ch = ser.read()
+                        if len(ch) == 0:
+                                driver_log = "Timeout Reached"
+                        else:
+                                serial_message = ch
+                                serial_message += ser.read( 13 )
+                                print serial_message
+                                if directionEnable:
+                                        driver_log = "Direction Set to Forward"
+                                else:
+                                        driver_log = "Direction Set to Reverse"
+                                directionFlag = False
+
+                        direction_assign = "302.c="
 			directionFlag = False
 			print "Direction command sent"
 		else:
-			inst_read = [''] * 46
+			t.sleep( 0.2 )
 		        ser.write( all_inst )
 			print "Instrumentation query sent"
 			i = 1
-			ch = ser.read()
+			ch = ser.read( 6 )
 			if len(ch) == 0:
 				print "Timeout Reached"
 			else:
-				inst_read[0] = ch
-				for i in range( 46 ):
-					inst_read[ i ] = ser.read( 1 ).encode( "hex" )
+#				inst_read[0] = ch
+				for i in range( 39 ):
+					if ( i % 2 == 1 ):
+						inst_read[ i ] = ser.read( 1 ).encode( "hex" )
+					else:
+						inst_read[ i ] = ser.read( 2 ).encode( "hex" )
+			
 		
-#			print inst_read	
+				print inst_read	
 				#
 				# Set Speed, Voltage, Current Draw Data
 				#
-				speed_value = str( int( inst_read[5], 16 ) )
-				voltage_value = str( int( inst_read[7], 16 ) )
-				current_value = str( int( inst_read[9],16  ) )
+				speed_value = str( int( inst_read[0], 16 ) )
+				voltage_value = str( int( inst_read[2], 16 ) )
+				current_value = str( int( inst_read[4],16  ) )
 
-		t.sleep(0.1)
+				print "Speed: " + speed_value
 
 	print "Serial Finished"
 #################### End of Functions Definition ####################
@@ -112,14 +223,15 @@ def main():
 	ser.open()
 	ser2.open()
 
-	if ser.isOpen() & ser2.isOpen():
-			print "Serial is open!"
-			t1 =  threading.Thread( target = serial_comm, args = ( ) )
-			t1.setDaemon( True )
-			t1.start()
-	else:
-			print "Serial failed"
-			sys.exit(0)
+	# Start serial without bluetooth connection ( Testing purposes only )
+#	if ser.isOpen() & ser2.isOpen():
+#			print "Serial is open!"
+#			t1 =  threading.Thread( target = serial_comm, args = ( ) )
+#			t1.setDaemon( True )
+#			t1.start()
+#	else:
+#			print "Serial failed"
+#			sys.exit(0)
 
 	# Open Serial Threads
 #	t1 = threading.Thread( target = serial_read, args = ( ) )
@@ -155,9 +267,14 @@ def main():
 	global coastFlag
 	global directionFlag
 
+	global desired_torque
 	global speed_value
 	global voltage_value
 	global current_value
+
+	global throttleEnable
+	global ignitionEnable
+	global directionEnable
 
 	throttleFlag = False
 	ignitionFlag = False
@@ -166,8 +283,11 @@ def main():
 	coastFlag = False
 	directionFlag = False
 
+
 	brakes_on = False
 	first_loop = True
+
+	# Send Disable Command to MC until bluetooth connection
 
 	# Bluetooth Setup
 	print "Creating Bluetooth Server"
@@ -194,6 +314,8 @@ def main():
 	# Start up Serial Communication
 	if ser.isOpen() & ser2.isOpen():
                         print "Serial is open!"
+			ser.flushInput()
+			ser.flushOutput()
                         t1 =  threading.Thread( target = serial_comm, args = ( ) )
                         t1.setDaemon( True )
                         t1.start()
@@ -201,6 +323,7 @@ def main():
                         print "Serial failed"
                         sys.exit(0)
 	try:
+		# Start serial communication
 		try:
 			while True:
 
@@ -215,23 +338,45 @@ def main():
 
 				# Check for changes and set flags for Serial Commands/Queries				
 				if not first_loop:
-					if send_data[4] != previous_data[4]:
-						accelerationFlag = True		
+					if send_data[4] != previous_data[4] and not accelerationFlag:
+						accelerationFlag = True	
+#						print send_data[4]	
+						desired_torque = hex( int( send_data[4] ) ).split('x')[1]
+#						desired_torque = hex( send_data[4] ).split( 'x' )[1]
+#						print desired_torque
+						if len( desired_torque ) == 1:
+							desired_torque = ( "000" + desired_torque )
+						elif len( desired_torque )== 2:
+                                                        desired_torque = ( "00" + desired_torque )
+						elif len( desired_torque )== 3:
+                                                        desired_torque = ( "0" + desired_torque )
+#						print desired_torque
 
 					if send_data[6] != previous_data[6]:
 						if send_data[6] == "1":
-							coastFlag = True
 							regenFlag = True
 						else:
 							coastFlag = True
 
 					if send_data[7] != previous_data[7]:
+						if send_data[7] == "1":
+							directionEnable = True
+						else:
+							directionEnable = False
 						directionFlag = True
 
 					if send_data[8] != previous_data[8]:
+						if send_data[8] == "1":
+							ignitionEnable = True
+						else:
+							ignitionEnable = False
 						ignitionFlag = True
 
 					if send_data[9] != previous_data[9]:
+						if send_data[9] == "1":
+							throttleEnable = True
+						else:
+							throttleEnable = False
 						throttleFlag = True
 
 					if send_data[10] != previous_data[10]:
@@ -280,7 +425,8 @@ def main():
 #				if GPIO.event_detected( pBrakeIn ):
 				if GPIO.input( pBrakeIn):
 					brakes_on = True
-					send_data[4] = "0"
+#					send_data[10] = "1"
+					coastFlag = True
 				else:
 					brakes_on = False	
 
@@ -297,7 +443,7 @@ def main():
 				
 				# Change Driver's Log
 				send_data[14] = driver_log
-				client_sock.send( ",".join( send_data ) )
+				print client_sock.send( ",".join( send_data ) )
 #				client_sock.send( "Message received." )
 				
 
@@ -341,11 +487,16 @@ if __name__=="__main__":
 	turn_right = False
 	turn_left = False
 	hazards_on = False
+	desired_torque = ''
 	
 	speed_value = "2"
 	voltage_value = "2"
 	current_value = "2"	
 	driver_log = "Welcome to Black Nova."
+
+	throttleEnable = False
+        ignitionEnable = False
+        directionEnable = False
 
 	# Start main loop
 	main()
