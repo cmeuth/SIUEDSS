@@ -18,6 +18,8 @@ smallFont = ("Times", 14, "bold")
 mediumFont = ("Times", 16, "bold")
 largeFont = ("Times", 20, "bold")
 
+# Logo
+
 #
 # GUI Class
 #
@@ -30,6 +32,7 @@ class Application( Frame ):
 		global directionColor
 		global ignitionColor
 		global directionText
+
 	
                 self.direction.configure( text = directionText )
 
@@ -63,6 +66,8 @@ class Application( Frame ):
                 Frame.__init__( self, master )
                 self.grid()
 		self.master.title( "SIUE Solar Car Team" )
+		
+		logo = PhotoImage( file="../images/solar-banner.gif" ) 
 
 		# Create Frames
 		for r in range(6):
@@ -71,18 +76,19 @@ class Application( Frame ):
 		for c in range(5):
 			self.master.columnconfigure( c, weight=1 )
 		
-		topFrame = Frame( master, bg="red" )
+		topFrame = Frame( master, bg="black" )
 		topFrame.grid( row=0, column=0, rowspan = 1, columnspan = 5, sticky = W+E+N+S )
 
-		statsFrame = Frame( master, bg="blue" )
+		statsFrame = Frame( master, bg="red" )
                 statsFrame.grid( row=1, column=0, rowspan = 3, columnspan = 3, sticky = W+E+N+S )
 
-		optionFrame = Frame( master, bg="green" )
+		optionFrame = Frame( master, bg="red" )
                 optionFrame.grid( row=1, column=3, rowspan = 3, columnspan = 2, sticky = W+E+N+S )
 	
-		logFrame = Frame( master, bg="orange" )
+		logFrame = Frame( master, bg="black" )
                 logFrame.grid( row=4, column=0, rowspan = 4, columnspan = 5, sticky = W+E+N+S )
 
+#		logoLabel = Label( topFrame, image=logo )
 		#	
 		# Car Statistics
 		#
@@ -153,8 +159,9 @@ class Application( Frame ):
 		#
                 # Top Frame
                 #
-                topLabel = Label( topFrame, text="TOP", font=mediumFont )
-                topLabel.pack( fill=BOTH, expand=1, padx=5, pady=5 )
+                topLabel = Label( topFrame, image=logo, highlightthickness=0, borderwidth=0 )
+		topLabel.image = logo
+                topLabel.pack( )
 
 		#
                 # Driver's Log
