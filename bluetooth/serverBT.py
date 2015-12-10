@@ -7,7 +7,7 @@ import threading
 import json
 
 ################### Function Calls ####################
-def serial_comm():
+def serial_comm(arg1, stop_event):
 
 	global ser
 	global coastFlag
@@ -42,7 +42,7 @@ def serial_comm():
 	# Main loop to continually check which messages to send to Motor Controller
 	# If no cmonnads to be sent, the instrumentation is read and sent to the user.
 	#
-	while True:
+	while (not stop_event.is_set()):
 		print "sending command"
 		inst_read = [''] * 39
 
@@ -247,10 +247,12 @@ def main():
 	pRight = "P9_13"
 	pBrakeOut = "P9_15"
 	pBrakeIn = "P8_15"
+	pRunning = "P9_16"
 
 	GPIO.setup( pLeft, GPIO.OUT ) # Left
 	GPIO.setup( pRight, GPIO.OUT ) # Right
 	GPIO.setup( pBrakeOut, GPIO.OUT ) # Brakes
+	GPIO.setup( pRunning, GPIO.OUT ) # Running LED
 
 	GPIO.setup( pBrakeIn, GPIO.IN ) # Brakes
 	GPIO.add_event_detect( pBrakeIn, GPIO.BOTH )
@@ -283,186 +285,231 @@ def main():
 	coastFlag = False
 	directionFlag = False
 
+	blink_counter = 0
 
 	brakes_on = False
 	first_loop = True
 
-	# Send Disable Command to MC until bluetooth connection
+	# Turn on LED to signal on
+	GPIO.output( pRunning, GPIO.HIGH )
 
-	# Bluetooth Setup
-	print "Creating Bluetooth Server"
-	server_sock = bluetooth.BluetoothSocket( bluetooth.RFCOMM )
+	while True:
 		
-	server_sock.bind(("", bluetooth.PORT_ANY))
-	server_sock.listen( 1 )
-
-	port = server_sock.getsockname()[1]
-
-	uuid = "94f39d29-7d6d-437d-973b-fba39e49d4ee"
-
-	bluetooth.advertise_service( server_sock, "SIUEDDS",
-			   service_id = uuid,
-			   service_classes = [ uuid, bluetooth.SERIAL_PORT_CLASS ],
-			   profiles = [ bluetooth.SERIAL_PORT_PROFILE ]
-			 )
-
-	print "Waiting for connection on RFCOMM channel %d" % port
-	client_sock, address = server_sock.accept()
-
-	print "Accepted connection from ", address
-
-	# Start up Serial Communication
-	if ser.isOpen() & ser2.isOpen():
-                        print "Serial is open!"
-			ser.flushInput()
-			ser.flushOutput()
-                        t1 =  threading.Thread( target = serial_comm, args = ( ) )
-                        t1.setDaemon( True )
-                        t1.start()
-        else:
-                        print "Serial failed"
-                        sys.exit(0)
-	try:
-		# Start serial communication
-		try:
-			while True:
-
-				# Bluetooth receive
-				data = client_sock.recv(1024)
 	
-#				print data
+		# Bluetooth Setup
+		print "Creating Bluetooth Server"
+		server_sock = bluetooth.BluetoothSocket( bluetooth.RFCOMM )
+		
+		server_sock.bind(("", bluetooth.PORT_ANY))
+		server_sock.listen( 1 )
+	
+		port = server_sock.getsockname()[1]
+	
+		uuid = "94f39d29-7d6d-437d-973b-fba39e49d4ee"
+	
+		bluetooth.advertise_service( server_sock, "SIUEDDS",
+				   service_id = uuid,
+				   service_classes = [ uuid, bluetooth.SERIAL_PORT_CLASS ],
+				   profiles = [ bluetooth.SERIAL_PORT_PROFILE ]
+				 )
+	
+		print "Waiting for connection on RFCOMM channel %d" % port
+		client_sock, address = server_sock.accept()
 
-				if len( data ) == 0 :break
-				global send_data
-				send_data = data.split(",")
+		print "Accepted connection from ", address
 
-				# Check for changes and set flags for Serial Commands/Queries				
-				if not first_loop:
-					if send_data[4] != previous_data[4] and not accelerationFlag:
-						accelerationFlag = True	
-#						print send_data[4]	
-						desired_torque = hex( int( send_data[4] ) ).split('x')[1]
-#						desired_torque = hex( send_data[4] ).split( 'x' )[1]
-#						print desired_torque
-						if len( desired_torque ) == 1:
-							desired_torque = ( "000" + desired_torque )
-						elif len( desired_torque )== 2:
-                                                        desired_torque = ( "00" + desired_torque )
-						elif len( desired_torque )== 3:
-                                                        desired_torque = ( "0" + desired_torque )
-#						print desired_torque
+		# Start up Serial Communication
+		if ser.isOpen() & ser2.isOpen():
+                	        print "Serial is open!"
+				ser.flushInput()
+				ser.flushOutput()
+				t1_stop = threading.Event()
+        	                t1 =  threading.Thread( target = serial_comm, args = (1, t1_stop ) )
+                	        t1.setDaemon( True )
+                        	t1.start()
+	        else:
+        	                print "Serial failed"
+                	        sys.exit(0)
+		try:
+	
+			try:
+				while True:
+	
+					# Bluetooth receive
+					data = client_sock.recv(1024)
+		
+#					print data
 
-					if send_data[6] != previous_data[6]:
-						if send_data[6] == "1":
-							regenFlag = True
-						else:
-							coastFlag = True
+					if len( data ) == 0 :break
+					global send_data
+					send_data = data.split(",")
+	
+					# Check for changes and set flags for Serial Commands/Queries				
+					if not first_loop:
+						if send_data[4] != previous_data[4] and not accelerationFlag:
+							accelerationFlag = True	
+#							print send_data[4]	
+							desired_torque = hex( int( send_data[4] ) ).split('x')[1]
+#							desired_torque = hex( send_data[4] ).split( 'x' )[1]
+#							print desired_torque
+							if len( desired_torque ) == 1:
+								desired_torque = ( "000" + desired_torque )
+							elif len( desired_torque )== 2:
+                                                	        desired_torque = ( "00" + desired_torque )
+							elif len( desired_torque )== 3:
+        	                                                desired_torque = ( "0" + desired_torque )
+#							print desired_torque
+	
+						if send_data[6] != previous_data[6]:
+							if send_data[6] == "1":
+								regenFlag = True
+							else:
+								coastFlag = True
 
-					if send_data[7] != previous_data[7]:
-						if send_data[7] == "1":
-							directionEnable = True
-						else:
-							directionEnable = False
-						directionFlag = True
+						if send_data[7] != previous_data[7]:
+							if send_data[7] == "1":
+								directionEnable = True
+							else:
+								directionEnable = False
+							directionFlag = True
 
-					if send_data[8] != previous_data[8]:
-						if send_data[8] == "1":
-							ignitionEnable = True
-						else:
-							ignitionEnable = False
-						ignitionFlag = True
+						if send_data[8] != previous_data[8]:
+							if send_data[8] == "1":
+								ignitionEnable = True
+							else:
+								ignitionEnable = False
+							ignitionFlag = True
 
-					if send_data[9] != previous_data[9]:
-						if send_data[9] == "1":
-							throttleEnable = True
-						else:
-							throttleEnable = False
-						throttleFlag = True
+						if send_data[9] != previous_data[9]:
+							if send_data[9] == "1":
+								throttleEnable = True
+							else:
+								throttleEnable = False
+							throttleFlag = True
 
-					if send_data[10] != previous_data[10]:
-						if send_data[10] == "1":
-							coastFlag = True
+						if send_data[10] != previous_data[10]:
+							if send_data[10] == "1":
+								coastFlag = True
 
-					send_data[11] = speed_value
-					send_data[12] = voltage_value
-					send_data[13] = current_value
-				# Check Hazards
-				if send_data[0] == "1":
-					hazards_on = True
-					print "Hazards on"
-					GPIO.output( pLeft, GPIO.HIGH )
-					GPIO.output( pRight, GPIO.HIGH )
-				else:
-#					print "Hazards off"
-					hazards_on = False
-					if not ( turn_right & turn_left ):
-						GPIO.output( pLeft, GPIO.LOW )
+						send_data[11] = speed_value
+						send_data[12] = voltage_value
+						send_data[13] = current_value
+					# Check Hazards
+					if send_data[0] == "1":
+						hazards_on = True
+						print "Hazards on"
+#						GPIO.output( pLeft, GPIO.HIGH )
+#						GPIO.output( pRight, GPIO.HIGH )
+					else:
+#						print "Hazards off"
+						hazards_on = False
+						blink_counter = 0
+						if not ( turn_right & turn_left ):
+							GPIO.output( pLeft, GPIO.LOW )
+							GPIO.output( pRight, GPIO.LOW )
+
+					# Check Right Turn Signal
+					if (send_data[1] == "1"):
+						print "Right Signal on"
+						if not hazards_on:
+							turn_right = True
+#							GPIO.output( pRight, GPIO.HIGH )
+					elif hazards_on != True:
+						turn_right = False
+						blink_counter = 0
+#						print "Right Signal off"
 						GPIO.output( pRight, GPIO.LOW )
 
-				# Check Right Turn Signal
-				if (send_data[1] == "1"):
-					print "Right Signal on"
-					if not hazards_on:
-						turn_right = True
-						GPIO.output( pRight, GPIO.HIGH )
-				elif hazards_on != True:
-					turn_right = False
-#					print "Right Signal off"
-					GPIO.output( pRight, GPIO.LOW )
+					#Check Left Turn Signal
+					if (send_data[2] == "1") & (hazards_on != True):
+						print "Left Signal on"
+						if not hazards_on:
+							turn_left = True
+#							GPIO.output( pLeft, GPIO.HIGH )
+					elif hazards_on != True:
+						turn_left = False
+						blink_counter = 0
+#						print "Left Signal Off"
+						GPIO.output( pLeft, GPIO.LOW )
 
-				#Check Left Turn Signal
-				if (send_data[2] == "1") & (hazards_on != True):
-					print "Left Signal on"
-					if not hazards_on:
-						turn_left = True
-						GPIO.output( pLeft, GPIO.HIGH )
-				elif hazards_on != True:
-					turn_left = False
-#					print "Left Signal Off"
-					GPIO.output( pLeft, GPIO.LOW )
+					# Check Brakes
+#					if GPIO.event_detected( pBrakeIn ):
+					if GPIO.input( pBrakeIn):
+						brakes_on = True
+#						send_data[10] = "1"
+						coastFlag = True
+					else:
+						brakes_on = False	
 
-				# Check Brakes
-#				if GPIO.event_detected( pBrakeIn ):
-				if GPIO.input( pBrakeIn):
-					brakes_on = True
-#					send_data[10] = "1"
-					coastFlag = True
-				else:
-					brakes_on = False	
+					# Blink signals accordingly
+					if turn_right:
+						if blink_counter < 10:
+							GPIO.output( pRight, GPIO.HIGH )
+						elif blink_counter < 20:
+							GPIO.output( pRight, GPIO.LOW )
+						else:
+							blink_counter = 0
+						blink_counter += 1
 
-				if brakes_on:
-#					print "Brakes on"
-					GPIO.output( pBrakeOut, GPIO.HIGH )
-				else:
-#					print "No brake"
-					GPIO.output( pBrakeOut, GPIO.LOW )
+					if turn_left:
+                                                if blink_counter < 10:
+                                                        GPIO.output( pLeft, GPIO.HIGH )
+                                                elif blink_counter < 20:
+                                                        GPIO.output( pLeft, GPIO.LOW )
+                                                else:
+                                                        blink_counter = 0
+                                                blink_counter += 1
+						
+					if hazards_on:
+                                                if blink_counter < 10:
+                                                        GPIO.output( pRight, GPIO.HIGH )
+                                                        GPIO.output( pLeft, GPIO.HIGH )
+                                                elif blink_counter < 20:
+                                                        GPIO.output( pRight, GPIO.LOW )
+                                                        GPIO.output( pLeft, GPIO.LOW )
+                                                else:
+                                                        blink_counter = 0
+                                                blink_counter += 1
+			
 
-				# Set previous data
-				previous_data = send_data
-				first_loop = False
+					if brakes_on:
+#						print "Brakes on"
+						GPIO.output( pBrakeOut, GPIO.HIGH )
+					else:
+#						print "No brake"
+						GPIO.output( pBrakeOut, GPIO.LOW )
+
+					# Set previous data
+					previous_data = send_data
+					first_loop = False
+					
+					# Change Driver's Log
+					send_data[14] = driver_log
+					print client_sock.send( ",".join( send_data ) )
+#					client_sock.send( "Message received." )
 				
-				# Change Driver's Log
-				send_data[14] = driver_log
-				print client_sock.send( ",".join( send_data ) )
-#				client_sock.send( "Message received." )
-				
 
-		except IOError:
-			print IOError
-			pass
+			except IOError:
+				print IOError
+				pass
 
-		print "Closing connection for no good reason"
-		client_sock.close()
-		server_sock.close()	
+			print "Closing connection for no good reason"
+			client_sock.close()
+			server_sock.close()	
 
-	except KeyboardInterrupt:
+		except KeyboardInterrupt:
 		
-		client_sock.close()
-		server_sock.close()
-		GPIO.cleanup()
-		ser.close()
+			client_sock.close()
+			server_sock.close()
+			GPIO.cleanup()
+			ser.close()
 
-	print "Connection closed."	
+		print "Connection closed."	
+		try:
+			t1_stop.set()
+			print "Serial Connection stopped."
+		except:
+			print "Error stopping serial."
 if __name__=="__main__":
 
 	# UART Setup
